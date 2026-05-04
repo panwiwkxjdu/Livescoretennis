@@ -1,0 +1,3180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tennis Live">
+    <meta name="theme-color" content="#08090a">
+    <meta name="description" content="Tennis Live · Realtime scoring system">
+    <title>Tennis Live · Pro</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='30' fill='%23ff6b14'/><text x='32' y='42' text-anchor='middle' font-size='28' font-weight='900' fill='%23000'>TL</text></svg>">
+    <style>
+        :root {
+            --bg: #08090a;
+            --surface: #111316;
+            --surface2: #181a1e;
+            --border: #262830;
+            --text: #e8eaed;
+            --text2: #8a8d94;
+            --accent: #ff6b14;
+            --accent2: #ff8c42;
+            --accent-glow: rgba(255, 107, 20, 0.35);
+            --blue: #4d9fff;
+            --red: #ff4757;
+            --green: #2ed573;
+            --gold: #ffa502;
+            --radius: 14px;
+            --radius-sm: 10px;
+            --safe-bottom: env(safe-area-inset-bottom, 6px);
+            --safe-top: env(safe-area-inset-top, 0px);
+            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --transition-fast: 0.15s ease;
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            letter-spacing: -0.2px;
+            -webkit-font-smoothing: antialiased;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .app {
+            width: 100%;
+            max-width: 460px;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg);
+            position: relative;
+            box-shadow: 0 0 80px rgba(0, 0, 0, 0.6);
+        }
+        @media(min-width:461px) {
+            .app {
+                border-radius: 20px;
+                height: 92dvh;
+                max-height: 900px;
+            }
+        }
+        .screen {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px 14px 90px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            animation: fadeInScreen var(--transition-smooth);
+        }
+        @keyframes fadeInScreen {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .screen.active {
+            display: flex;
+        }
+        #screen-start {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at 30% 30%, #1a1a1a, #050505 80%);
+            cursor: pointer;
+            padding: 0;
+            gap: 24px;
+            animation: fadeInBg 0.8s ease;
+        }
+        @keyframes fadeInBg {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        #screen-start .start-logo {
+            font-size: 2.6rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            background: linear-gradient(135deg, #ff6b14, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: logoFloat 2s ease-in-out infinite;
+            text-align: center;
+        }
+        @keyframes logoFloat {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+        #screen-start .start-subtitle {
+            color: #888;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: pulseText 2s infinite;
+        }
+        @keyframes pulseText {
+            0%,
+            100% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+        #screen-start .tap-hint {
+            position: absolute;
+            bottom: 60px;
+            color: #666;
+            font-size: 0.75rem;
+            animation: bounce 1.5s infinite;
+        }
+        @keyframes bounce {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            padding-top: calc(10px + var(--safe-top));
+            background: rgba(17, 19, 22, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+        .topbar .logo {
+            font-weight: 900;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ff6b14, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            flex: 1;
+        }
+        .topbar .live-dot {
+            width: 9px;
+            height: 9px;
+            background: #ff3b3b;
+            border-radius: 50%;
+            animation: livePulse 1s infinite;
+            box-shadow: 0 0 10px #ff3b3b;
+            flex-shrink: 0;
+        }
+        .topbar .role-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text2);
+            flex-shrink: 0;
+            letter-spacing: 0.3px;
+        }
+        .topbar .role-badge.judge {
+            color: var(--gold);
+            background: rgba(255, 165, 2, 0.15);
+        }
+        .topbar .role-badge.player {
+            color: var(--blue);
+            background: rgba(77, 159, 255, 0.15);
+        }
+        .topbar .role-badge.spectator {
+            color: var(--green);
+            background: rgba(46, 213, 115, 0.15);
+        }
+        @keyframes livePulse {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.25;
+                transform: scale(2);
+            }
+        }
+        .bottomnav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            background: rgba(17, 19, 22, 0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border);
+            z-index: 200;
+            padding: 4px 0 var(--safe-bottom);
+        }
+        .bottomnav button {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text2);
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 10px 4px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            transition: all var(--transition-fast);
+            letter-spacing: 0.3px;
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bottomnav button .nav-icon {
+            font-size: 1.25rem;
+        }
+        .bottomnav button.active {
+            color: var(--accent);
+        }
+        .bottomnav button.active::after {
+            content: '';
+            width: 18px;
+            height: 2.5px;
+            background: var(--accent);
+            border-radius: 4px;
+            margin-top: 2px;
+        }
+        .bottomnav .notif-badge {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            min-width: 18px;
+            height: 18px;
+            background: var(--red);
+            border-radius: 9px;
+            animation: livePulse 1s infinite;
+            display: none;
+            font-size: 0.6rem;
+            font-weight: 900;
+            line-height: 18px;
+            text-align: center;
+            color: #fff;
+            padding: 0 5px;
+        }
+        .bottomnav .notif-badge.show {
+            display: block;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+        }
+        .card h3 {
+            font-weight: 800;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            color: var(--text);
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card h4 {
+            font-weight: 700;
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            padding: 11px 18px;
+            border-radius: 22px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            cursor: pointer;
+            color: var(--text);
+            transition: all var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            letter-spacing: 0.2px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .btn:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+        .btn.primary {
+            background: linear-gradient(135deg, #ff6b14, #ff8c42);
+            color: #000;
+            border: none;
+            box-shadow: 0 4px 18px rgba(255, 107, 20, 0.4);
+            font-weight: 800;
+        }
+        .btn.small {
+            padding: 6px 11px;
+            font-size: 0.7rem;
+            border-radius: 16px;
+        }
+        .btn.block {
+            width: 100%;
+            margin: 4px 0;
+        }
+        .btn.danger {
+            background: var(--red);
+            color: #fff;
+            border-color: var(--red);
+        }
+        .btn.success {
+            background: var(--green);
+            color: #000;
+            border-color: var(--green);
+        }
+        .btn:disabled {
+            opacity: 0.35;
+            pointer-events: none;
+            filter: grayscale(30%);
+        }
+        .btn.reaction {
+            font-size: 1rem;
+            padding: 4px 8px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid transparent;
+            min-width: auto;
+        }
+        .btn.reaction:active {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+        }
+        .input {
+            width: 100%;
+            padding: 11px 13px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            margin: 3px 0;
+            background: var(--surface2);
+            color: var(--text);
+            outline: none;
+            transition: border 0.2s;
+        }
+        .input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        select.input {
+            appearance: none;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="%23888"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+        .match-card {
+            background: linear-gradient(145deg, #14161a, #0d0f12);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .match-card:active {
+            border-color: var(--accent);
+            box-shadow: 0 0 18px var(--accent-glow);
+        }
+        .match-card .live-tag {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            background: #ff3b3b;
+            color: #fff;
+            font-size: 0.6rem;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 10px;
+            letter-spacing: 1px;
+            animation: livePulse 1.2s infinite;
+        }
+        .match-card .players-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .match-card .player-col {
+            flex: 1;
+            text-align: center;
+        }
+        .match-card .player-name {
+            font-weight: 800;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .match-card .player-rating {
+            font-size: 0.65rem;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        .match-card .score-display {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #fff;
+        }
+        .match-card .vs-text {
+            font-weight: 800;
+            color: var(--text2);
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+        .match-card .judge-tag {
+            font-size: 0.6rem;
+            color: var(--gold);
+            font-weight: 700;
+            margin-top: 4px;
+            text-align: center;
+        }
+        .lb-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--surface2);
+            border-radius: var(--radius-sm);
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .lb-item.top3 {
+            border-color: var(--gold);
+            background: linear-gradient(145deg, #1a1c20, #141518);
+        }
+        .lb-rank {
+            font-weight: 900;
+            font-size: 1rem;
+            width: 28px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .lb-rank.gold {
+            color: #ffd700;
+        }
+        .lb-rank.silver {
+            color: #c0c0c0;
+        }
+        .lb-rank.bronze {
+            color: #cd7f32;
+        }
+        .lb-info {
+            flex: 1;
+        }
+        .lb-name {
+            font-weight: 700;
+            font-size: 0.82rem;
+        }
+        .lb-rating {
+            font-weight: 900;
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 3px 8px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .badge.gold-badge {
+            background: rgba(255, 165, 2, 0.2);
+            color: #ffd700;
+            border: 1px solid rgba(255, 165, 2, 0.3);
+        }
+        .scoreboard {
+            display: flex;
+            align-items: stretch;
+            gap: 4px;
+            margin: 8px 0;
+            flex-shrink: 0;
+        }
+        .player-side {
+            flex: 1;
+            background: var(--surface2);
+            border-radius: var(--radius);
+            padding: 14px 8px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            position: relative;
+        }
+        .player-side.serving {
+            border-color: var(--green);
+            box-shadow: 0 0 22px rgba(46, 213, 115, 0.3);
+        }
+        .player-side.winner {
+            border-color: var(--gold);
+            box-shadow: 0 0 22px rgba(255, 165, 2, 0.5);
+            animation: winGlow 0.8s ease-out;
+        }
+        .player-side.my-side {
+            border-color: var(--blue);
+            box-shadow: 0 0 16px rgba(77, 159, 255, 0.25);
+            background: linear-gradient(145deg, #1a2030, #0d1118);
+        }
+        .player-side.my-side::after {
+            content: '👤 Вы';
+            position: absolute;
+            top: -10px;
+            right: 8px;
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: var(--blue);
+            background: var(--surface);
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+        .player-side.game-win-flash {
+            animation: gameFlash 0.6s ease-out;
+        }
+        @keyframes gameFlash {
+            0% {
+                box-shadow: 0 0 50px var(--green);
+                border-color: var(--green);
+                background: #0a2a15;
+            }
+            100% {
+                box-shadow: 0 0 22px rgba(46, 213, 115, 0.3);
+            }
+        }
+        .player-side.set-win-flash {
+            animation: setFlash 0.8s ease-out;
+        }
+        @keyframes setFlash {
+            0% {
+                box-shadow: 0 0 70px var(--gold);
+                border-color: var(--gold);
+                background: #2a1e0a;
+            }
+            100% {
+                box-shadow: 0 0 22px rgba(255, 165, 2, 0.5);
+            }
+        }
+        @keyframes winGlow {
+            0% {
+                box-shadow: 0 0 40px rgba(255, 165, 2, 0.8);
+            }
+            100% {
+                box-shadow: 0 0 22px rgba(255, 165, 2, 0.5);
+            }
+        }
+        .serve-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px var(--green);
+            animation: pulseDot 1.2s infinite;
+            flex-shrink: 0;
+        }
+        @keyframes pulseDot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.3;
+                transform: scale(2);
+            }
+        }
+        .sets-display {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--accent);
+        }
+        .games-display {
+            font-size: 0.9rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 10px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 0 auto;
+        }
+        .points-display {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1;
+            transition: transform 0.2s;
+        }
+        .points-display.pulse {
+            animation: pointPulse 0.35s ease-out;
+        }
+        @keyframes pointPulse {
+            0% {
+                transform: scale(1.5);
+                color: var(--accent);
+            }
+            100% {
+                transform: scale(1);
+                color: #fff;
+            }
+        }
+        .big-score-btns {
+            display: flex;
+            gap: 8px;
+            margin: 6px 0;
+            flex-shrink: 0;
+        }
+        .big-point-btn {
+            flex: 1;
+            min-height: 100px;
+            border-radius: 20px;
+            border: 2px solid transparent;
+            font-size: 1rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            transition: all 0.1s;
+            color: #fff;
+            letter-spacing: 0.5px;
+            touch-action: manipulation;
+        }
+        .big-point-btn:active {
+            transform: scale(0.92);
+        }
+        .big-point-btn.left {
+            background: linear-gradient(135deg, #1a3050, #0c1c30);
+            border-color: var(--blue);
+            box-shadow: 0 0 25px rgba(77, 159, 255, 0.25);
+        }
+        .big-point-btn.right {
+            background: linear-gradient(135deg, #381818, #1f0c0c);
+            border-color: var(--red);
+            box-shadow: 0 0 25px rgba(255, 71, 87, 0.25);
+        }
+        .big-point-btn:disabled {
+            opacity: 0.3;
+            filter: grayscale(50%);
+            box-shadow: none;
+            border-color: #333;
+        }
+        .big-point-btn .label {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .history-entry {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            margin: 2px 0;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            animation: slideIn 0.2s ease;
+            cursor: pointer;
+        }
+        .history-entry:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .history-entry.point {
+            border-left: 2px solid var(--accent);
+        }
+        .history-entry.game {
+            border-left: 2px solid var(--green);
+        }
+        .history-entry.set {
+            border-left: 2px solid var(--gold);
+        }
+        .history-entry.match-win {
+            border-left: 2px solid var(--gold);
+            font-weight: 700;
+        }
+        .history-entry .event-time {
+            font-size: 0.55rem;
+            color: var(--text2);
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        .chat-message {
+            font-size: 0.72rem;
+            padding: 6px 10px;
+            margin: 4px 0;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            max-width: 85%;
+            animation: fadeInMsg 0.2s ease;
+            word-break: break-word;
+        }
+        .chat-message.my-msg {
+            margin-left: auto;
+            background: rgba(255, 107, 20, 0.15);
+            border-top-right-radius: 2px;
+        }
+        .chat-message.other-msg {
+            margin-right: auto;
+            background: rgba(255, 255, 255, 0.04);
+            border-top-left-radius: 2px;
+        }
+        .chat-message .msg-sender {
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 2px;
+        }
+        .chat-message .msg-time {
+            font-size: 0.5rem;
+            color: var(--text2);
+            float: right;
+            margin-left: 8px;
+        }
+        @keyframes fadeInMsg {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: #000;
+            padding: 10px 22px;
+            border-radius: 24px;
+            font-weight: 800;
+            z-index: 3000;
+            animation: slideUp 0.3s;
+            font-size: 0.8rem;
+            box-shadow: 0 8px 30px var(--accent-glow);
+            pointer-events: none;
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, 16px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(6px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.2s;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            max-width: 90vw;
+            width: 360px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .streak-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: linear-gradient(135deg, #ff4757, #ff6b14);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 900;
+            padding: 3px 8px;
+            border-radius: 10px;
+            animation: flameFlicker 0.8s infinite alternate;
+        }
+        @keyframes flameFlicker {
+            0% {
+                box-shadow: 0 0 6px #ff4757;
+            }
+            100% {
+                box-shadow: 0 0 18px #ff6b14;
+            }
+        }
+        .friend-tag {
+            font-size: 0.6rem;
+            background: rgba(77, 159, 255, 0.2);
+            color: var(--blue);
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+        .invite-code {
+            font-family: 'SF Mono', 'Consolas', monospace;
+            background: #000;
+            color: var(--accent);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-align: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border: 1px dashed var(--accent);
+        }
+        .skeleton {
+            background: linear-gradient(90deg, var(--surface2) 25%, #222 50%, var(--surface2) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-sm);
+        }
+        .skeleton-line {
+            height: 14px;
+            margin: 6px 0;
+            width: 80%;
+        }
+        .skeleton-line.short {
+            width: 50%;
+        }
+        .skeleton-card {
+            height: 80px;
+            margin-bottom: 8px;
+        }
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 30px 16px;
+            color: var(--text2);
+        }
+        .empty-state .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        .empty-state .empty-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        .empty-state .empty-desc {
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .stat-item {
+            background: var(--surface2);
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            text-align: center;
+        }
+        .stat-item .stat-value {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--accent);
+        }
+        .stat-item .stat-label {
+            font-size: 0.6rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+        .notif-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 8px 10px;
+            background: var(--surface2);
+            border-radius: var(--radius-sm);
+            margin-bottom: 4px;
+            border-left: 3px solid var(--accent);
+            font-size: 0.75rem;
+            animation: slideIn 0.2s ease;
+        }
+        .profile-header {
+            text-align: center;
+            padding: 16px 0;
+        }
+        .profile-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--gold));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 900;
+            margin: 0 auto 10px;
+            color: #000;
+        }
+        .profile-name {
+            font-size: 1.2rem;
+            font-weight: 900;
+        }
+        .profile-rating {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--accent);
+        }
+        .judge-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            color: var(--gold);
+            font-weight: 700;
+            padding: 3px 10px;
+            background: rgba(255, 165, 2, 0.1);
+            border-radius: 12px;
+        }
+        .offline-banner {
+            display: none;
+            background: var(--red);
+            color: #fff;
+            text-align: center;
+            padding: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .offline-banner.show {
+            display: block;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        ::-webkit-scrollbar {
+            width: 2px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 10px;
+        }
+        label {
+            font-size: 0.7rem;
+            color: var(--text2);
+            font-weight: 700;
+            display: block;
+            margin-top: 6px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            background: var(--surface2);
+            border-radius: var(--radius-sm);
+            padding: 7px 10px;
+            margin: 4px 0;
+            flex-shrink: 0;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app" id="appContainer">
+        <div class="offline-banner" id="offlineBanner">⚡ Офлайн -- данные синхронизируются при подключении</div>
+        <div class="topbar" id="topBar">
+            <span class="logo">TENNIS·LIVE</span>
+            <span class="live-dot" id="liveIndicator" style="display:none" title="Live матчи"></span>
+            <span class="role-badge" id="roleBadge">👤 Игрок</span>
+            <button id="btnOpenProfile" class="btn small" style="padding:4px 8px;font-size:0.65rem;flex-shrink:0">Профиль</button>
+        </div>
+        <div class="screen active" id="screen-start">
+            <div class="start-logo">TENNIS<br>LIVE</div>
+            <div class="start-subtitle">realtime tennis system</div>
+            <div class="tap-hint">👆 Нажмите, чтобы начать</div>
+        </div>
+        <div class="screen" id="screen-dashboard">
+            <div id="dashboardSkeleton" style="display:none">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line short"></div>
+                <div class="skeleton skeleton-card" style="margin-top:10px"></div>
+            </div>
+            <div class="card">
+                <h3>⚡ LIVE матчи</h3>
+                <div id="dashboardLiveList"></div>
+            </div>
+            <div class="card">
+                <h3>🔔 Ваши матчи</h3>
+                <div id="dashboardMyMatches"></div>
+            </div>
+            <button class="btn primary block" id="btnQuickMatch">🎾 Быстрый матч (судья)</button>
+            <button class="btn block" id="btnQuickSelf">📝 Записать результат</button>
+            <button class="btn block" id="btnFindRival" style="background:var(--blue);color:#fff;border-color:var(--blue)">🎯 Найти соперника</button>
+        </div>
+        <div class="screen" id="screen-matchmaking">
+            <div class="card">
+                <h3>🎯 Подходящие соперники</h3>
+                <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+                    <button class="btn small active mm-filter" data-filter="all">Все</button>
+                    <button class="btn small mm-filter" data-filter="friends">👥 Друзья</button>
+                    <button class="btn small mm-filter" data-filter="rating">📊 ±100 рейтинга</button>
+                </div>
+                <p style="font-size:0.7rem;color:var(--text2);margin-bottom:8px" id="matchmakingDesc">Все игроки</p>
+                <div id="matchmakingList"></div>
+                <button class="btn block" id="btnBackMatchmaking">↩ Назад</button>
+            </div>
+        </div>
+        <div class="screen" id="screen-leaderboard">
+            <div class="card">
+                <h3>🏆 Лидерборд</h3>
+                <div style="display:flex;gap:6px;margin-bottom:10px">
+                    <button class="btn small active lb-filter" data-period="all">Всё время</button>
+                    <button class="btn small lb-filter" data-period="week">Неделя</button>
+                    <button class="btn small lb-filter" data-period="month">Месяц</button>
+                </div>
+                <div id="leaderboardList"></div>
+            </div>
+            <div class="card" id="yourLeagueCard" style="display:none">
+                <h3>👥 Твоя лига</h3>
+                <div id="yourLeagueList"></div>
+            </div>
+        </div>
+        <div class="screen" id="screen-live-match">
+            <div class="card" style="padding:8px;display:flex;flex-direction:column;gap:4px">
+                <div id="matchTournament" style="text-align:center;font-weight:800;color:var(--accent);font-size:0.8rem"></div>
+                <div id="matchJudgeInfo" style="text-align:center;margin:2px 0"></div>
+                <div class="scoreboard">
+                    <div class="player-side" id="sideLeftBox">
+                        <div class="player-name" id="playerLeftName"></div>
+                        <div class="sets-display" id="setsLeft">0</div>
+                        <div class="games-display" id="gamesLeft">0</div>
+                        <div class="points-display" id="pointsLeft">0</div>
+                    </div>
+                    <div style="display:flex;align-items:center;font-weight:900;color:var(--text2);opacity:0.5;flex-shrink:0">VS</div>
+                    <div class="player-side" id="sideRightBox">
+                        <div class="player-name" id="playerRightName"></div>
+                        <div class="sets-display" id="setsRight">0</div>
+                        <div class="games-display" id="gamesRight">0</div>
+                        <div class="points-display" id="pointsRight">0</div>
+                    </div>
+                </div>
+                <div class="big-score-btns">
+                    <button class="big-point-btn left" id="btnPointLeft"><span class="label">ОЧКО</span>🎾</button>
+                    <button class="big-point-btn right" id="btnPointRight"><span class="label">ОЧКО</span>🎾</button>
+                </div>
+                <div class="info-bar">
+                    <span id="matchStatus">🎾 В игре</span>
+                    <div style="display:flex;gap:4px;flex-wrap:wrap">
+                        <button id="btnUndo" class="btn small" disabled>↩</button>
+                        <button id="btnEndMatch" class="btn small danger">Завершить</button>
+                        <button id="btnInterruptMatch" class="btn small" style="background:var(--accent);color:#000">Прервать</button>
+                        <button id="btnTransferJudge" class="btn small" style="background:#555;color:#fff;display:none">Передать</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card" id="matchStatsCard">
+                <h4>📈 Статистика матча</h4>
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-item"><div class="stat-value" id="statTotalPoints">0</div><div class="stat-label">Всего очков</div></div>
+                    <div class="stat-item"><div class="stat-value" id="statStreak">--</div><div class="stat-label">Серия очков</div></div>
+                    <div class="stat-item"><div class="stat-value" id="statLeftPts">0</div><div class="stat-label" id="statLeftName">Левый</div></div>
+                    <div class="stat-item"><div class="stat-value" id="statRightPts">0</div><div class="stat-label" id="statRightName">Правый</div></div>
+                </div>
+            </div>
+            <div class="card" id="matchHistoryCard">
+                <h4>📊 Ход матча <button class="btn small" id="btnRewind" style="float:right;font-size:0.6rem" disabled>⏪ Перемотка</button></h4>
+                <div id="historyEntries" style="max-height:140px;overflow-y:auto;"></div>
+            </div>
+            <div class="card" id="matchChatCard">
+                <h4>💬 Чат</h4>
+                <div id="chatMessages" style="max-height:160px;overflow-y:auto;margin-bottom:6px"></div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px" id="reactionBar">
+                    <button class="btn reaction" data-reaction="👍">👍</button>
+                    <button class="btn reaction" data-reaction="🔥">🔥</button>
+                    <button class="btn reaction" data-reaction="😮">😮</button>
+                    <button class="btn reaction" data-reaction="👏">👏</button>
+                </div>
+                <div style="display:flex;gap:4px">
+                    <input id="chatInput" class="input" placeholder="Сообщение..." style="flex:1;margin:0" maxlength="120">
+                    <button id="btnSendChat" class="btn primary small" style="flex-shrink:0">➤</button>
+                </div>
+                <div class="chat-char-count" id="chatCharCount">0/120</div>
+            </div>
+            <button class="btn block" id="btnBackFromLiveMatch">↩ К списку</button>
+        </div>
+        <div class="screen" id="screen-quick-setup">
+            <div class="card">
+                <h3>🎾 Новый матч</h3>
+                <label>Турнир</label>
+                <select id="inpTournamentSelect" class="input"></select>
+                <button id="btnNewTournamentInline" class="btn small" style="margin-top:4px">+ Новый турнир</button>
+                <label>Стадия турнира</label>
+                <select id="inpRound" class="input">
+                    <option value="">Обычный матч</option><option value="1/4 финала">1/4 финала</option><option value="1/2 финала">Полуфинал</option><option value="Финал">Финал</option>
+                </select>
+                <label>Левый игрок</label>
+                <div style="display:flex;gap:6px"><select id="liveLeftSelect" class="input" style="flex:1"></select><input id="inpNewLiveLeft" class="input" placeholder="Имя" style="flex:1"></div>
+                <label>Правый игрок</label>
+                <div style="display:flex;gap:6px"><select id="liveRightSelect" class="input" style="flex:1"></select><input id="inpNewLiveRight" class="input" placeholder="Имя" style="flex:1"></div>
+                <button id="btnCreateLiveMatch" class="btn primary block">🚀 Создать и начать</button>
+                <button id="btnBackQuickSetup" class="btn block">↩ Отмена</button>
+            </div>
+        </div>
+        <div class="screen" id="screen-self-setup">
+            <div class="card">
+                <h3>📝 Записать результат</h3>
+                <label>Левый игрок</label>
+                <select id="selLeftPlayer" class="input"></select>
+                <input id="inpNewLeftPlayer" class="input" placeholder="Или новое имя">
+                <label>Правый игрок</label>
+                <select id="selRightPlayer" class="input"></select>
+                <input id="inpNewRightPlayer" class="input" placeholder="Или новое имя">
+                <label>Счёт (сеты: 6:4 3:6 10:7)</label>
+                <input id="inpScoreSelf" class="input" placeholder="6:4 3:6 10:7">
+                <button id="btnCreateSelfMatch" class="btn primary block">✅ Записать</button>
+                <button id="btnBackSelfSetup" class="btn block">↩ Отмена</button>
+            </div>
+        </div>
+        <div class="screen" id="screen-friends">
+            <div class="card">
+                <h3>👥 Друзья</h3>
+                <div id="friendsList"></div>
+            </div>
+            <div class="card">
+                <h3>📨 Пригласить друга</h3>
+                <p style="font-size:0.75rem;color:var(--text2);margin-bottom:6px">Отправьте код другу:</p>
+                <div class="invite-code" id="myInviteCode">----</div>
+                <p style="font-size:0.65rem;color:var(--text2);margin-top:4px">Нажмите, чтобы скопировать</p>
+                <label>Или введите код друга:</label>
+                <div style="display:flex;gap:6px"><input id="inpFriendCode" class="input" placeholder="Код" style="flex:1;text-transform:uppercase"><button id="btnAddFriendByCode" class="btn primary small">Добавить</button></div>
+            </div>
+            <div id="pendingRequests" style="margin-top:8px"></div>
+        </div>
+        <div class="screen" id="screen-notifications">
+            <div class="card">
+                <h3>🔔 Уведомления</h3>
+                <div id="notificationsList"></div>
+            </div>
+        </div>
+        <div class="screen" id="screen-profile">
+            <div class="card">
+                <div class="profile-header">
+                    <div class="profile-avatar" id="profileAvatar">?</div>
+                    <div class="profile-name" id="profileName">Игрок</div>
+                    <div class="profile-rating" id="profileRating">1000</div>
+                    <div id="profileStreak" style="margin-top:4px"></div>
+                    <button id="btnChangeName" class="btn small" style="margin-top:8px">✏️ Изменить имя</button>
+                    <button id="btnBackProfile" class="btn small" style="margin-top:4px">↩ Назад</button>
+                </div>
+            </div>
+            <div class="card">
+                <h4>📊 Статистика</h4>
+                <div class="stats-grid">
+                    <div class="stat-item"><div class="stat-value" id="profMatches">0</div><div class="stat-label">Матчей</div></div>
+                    <div class="stat-item"><div class="stat-value" id="profWins">0</div><div class="stat-label">Побед</div></div>
+                    <div class="stat-item"><div class="stat-value" id="profLosses">0</div><div class="stat-label">Поражений</div></div>
+                    <div class="stat-item"><div class="stat-value" id="profWinrate">--</div><div class="stat-label">Winrate</div></div>
+                </div>
+            </div>
+            <div class="card">
+                <h4>🏅 Достижения</h4>
+                <div id="profBadges"><span style="color:var(--text2);font-size:0.7rem">Нет достижений</span></div>
+            </div>
+            <div class="card">
+                <h4>📋 Последние матчи</h4>
+                <div id="profRecentMatches"><span style="color:var(--text2);font-size:0.7rem">Нет матчей</span></div>
+            </div>
+        </div>
+        <div class="screen" id="screen-broadcast">
+            <div class="card" style="text-align:center" id="broadcastContent"></div>
+            <button class="btn block" id="btnBackBroadcast">↩ К списку</button>
+        </div>
+        <div class="screen" id="screen-tournament-bracket">
+            <div class="card">
+                <h3>🏟 Турнирная сетка</h3>
+                <div id="bracketContent"><div class="empty-state"><div class="empty-icon">🏟</div><div class="empty-title">Выберите турнир</div></div></div>
+                <button class="btn block" id="btnBackBracket">↩ Назад</button>
+            </div>
+        </div>
+        <div class="bottomnav" id="bottomNav">
+            <button class="active" data-screen="dashboard"><span class="nav-icon">📊</span>Матчи</button>
+            <button data-screen="leaderboard"><span class="nav-icon">🏆</span>Рейтинг</button>
+            <button data-screen="friends"><span class="nav-icon">👥</span>Друзья</button>
+            <button data-screen="notifications" id="btnNavNotif"><span class="nav-icon">🔔</span>Уведомления<span class="notif-badge" id="notifBadge"></span></button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+        import { getDatabase, ref, push, set, update, get, onValue, runTransaction, serverTimestamp, remove, onDisconnect, goOnline, goOffline } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+
+        // ═══════════════════════════════════════
+        // CONFIG
+        // ═══════════════════════════════════════
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBX9b5aUvTxqUU7wCoLrSZj4iDQQMuOcY",
+            authDomain: "tennislive-3d29d.firebaseapp.com",
+            databaseURL: "https://tennislive-3d29d-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "tennislive-3d29d",
+            storageBucket: "tennislive-3d29d.firebasestorage.app",
+            messagingSenderId: "218839864905",
+            appId: "1:218839864905:web:40c9f735f9111c02371198"
+        };
+        const LS_UID_KEY = 'tl_userId';
+        const CHAT_DEBOUNCE_MS = 600;
+        const CHAT_COOLDOWN_MS = 1500;
+        const POINT_LOCK_MS = 800;
+
+        // ═══════════════════════════════════════
+        // UTILITY FUNCTIONS
+        // ═══════════════════════════════════════
+        const $ = s => document.querySelector(s);
+        const $$ = s => document.querySelectorAll(s);
+        const noop = () => {};
+        let _toastTimer = null;
+
+        function showToast(msg) {
+            if (_toastTimer) { const old = document.querySelector('.toast'); if (old) old.remove();
+                clearTimeout(_toastTimer); }
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            document.body.appendChild(t);
+            _toastTimer = setTimeout(() => { t.remove();
+                _toastTimer = null; }, 2500);
+        }
+
+        function vibrate(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+        function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t);
+                t = setTimeout(() => fn(...a), ms); }; }
+
+        function throttle(fn, ms) { let last = 0; return (...a) => { const now = Date.now(); if (now - last >= ms) { last =
+                        now;
+                    fn(...a); } }; }
+
+        async function retryFB(fn, max = 3, delay = 800) {
+            for (let i = 0; i < max; i++) {
+                try { return await fn(); } catch (e) { if (i === max - 1) throw e;
+                    await new Promise(r => setTimeout(r, delay * (i + 1))); }
+            }
+        }
+
+        function isOnline() { return navigator.onLine; }
+
+        // ═══════════════════════════════════════
+        // FIREBASE INIT
+        // ═══════════════════════════════════════
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        // ═══════════════════════════════════════
+        // SUBSCRIPTION MANAGER
+        // ═══════════════════════════════════════
+        const SubManager = {
+            _subs: new Map(),
+            add(key, unsubFn) { this._subs.set(key, unsubFn); },
+            remove(key) { const fn = this._subs.get(key); if (fn) { try { fn(); } catch (e) {} this._subs.delete(
+                        key); } },
+            clearAll() { this._subs.forEach(fn => { try { fn(); } catch (e) {} });
+                this._subs.clear(); },
+            clearByPrefix(prefix) { for (const [k, fn] of this._subs) { if (k.startsWith(prefix)) { try { fn(); } catch (
+                            e) {} this._subs.delete(k); } } }
+        };
+
+        // ═══════════════════════════════════════
+        // GAME ENGINE (preserved core logic)
+        // ═══════════════════════════════════════
+        const GameEngine = (() => {
+            const MODES = {
+                single: { setsToWin: 2, gamesToWin: 6, tiebreakAt: 6, suddenDeathAfter: Infinity },
+                double: { setsToWin: 2, gamesToWin: 6, tiebreakAt: 6, suddenDeathAfter: 0 },
+                proam: { setsToWin: 1, gamesToWin: 8, tiebreakAt: 8, suddenDeathAfter: 1 }
+            };
+
+            function getConfig(mode) { return MODES[mode] || MODES.single; }
+
+            function fmtPoints(pts, isTb) {
+                if (isTb) return [String(pts[0]), String(pts[1])];
+                const [p0, p1] = pts;
+                if (p0 >= 3 && p1 >= 3) return p0 === p1 ? ['40', '40'] : (p0 > p1 ? ['AD', '40'] : ['40', 'AD']);
+                const map = ['0', '15', '30', '40'];
+                return [map[Math.min(p0, 3)] || '40', map[Math.min(p1, 3)] || '40'];
+            }
+
+            function isGameWon(pts, isTb, cfg, deuceCount) {
+                const [p0, p1] = pts;
+                if (isTb) return (p0 >= 7 || p1 >= 7) && Math.abs(p0 - p1) >= 2;
+                if (cfg.suddenDeathAfter === 0) return p0 >= 4 || p1 >= 4;
+                if (p0 >= 3 && p1 >= 3) {
+                    if (deuceCount > cfg.suddenDeathAfter) return Math.abs(p0 - p1) === 1 && (p0 >= 4 || p1 >= 4);
+                    return (p0 >= 4 || p1 >= 4) && Math.abs(p0 - p1) >= 2;
+                }
+                return (p0 >= 4 || p1 >= 4) && Math.abs(p0 - p1) >= 2;
+            }
+
+            function isSetWon(games, cfg) { return (games[0] >= cfg.gamesToWin || games[1] >= cfg.gamesToWin) && Math.abs(
+                    games[0] - games[1]) >= 2; }
+
+            function shouldTiebreak(games, cfg) { return games[0] === cfg.tiebreakAt && games[1] === cfg.tiebreakAt; }
+
+            function processPoint(current, side) {
+                const cfg = current.config || MODES.single;
+                const cur = current.score.currentSet;
+                const idx = side === 'left' ? 0 : 1;
+                const ptsBefore = [cur.points[0], cur.points[1]];
+                cur.points[idx]++;
+                current.stats.totalPoints = (current.stats.totalPoints || 0) + 1;
+                if (!current.history) current.history = [];
+                current.history.push({
+                    action: 'point',
+                    side,
+                    ts: Date.now(),
+                    playerName: side === 'left' ? current.players.left.name : current.players.right.name,
+                    before: { sets: [...current.score.sets], games: [...cur.games], points: [...ptsBefore],
+                        isTiebreak: cur.isTiebreak, deuceCount: cur.deuceCount }
+                });
+                if (isGameWon(cur.points, cur.isTiebreak, cfg, cur.deuceCount)) {
+                    cur.games[idx]++;
+                    current.stats.totalGames = (current.stats.totalGames || 0) + 1;
+                    const gameWinner = side === 'left' ? current.players.left.name : current.players.right.name;
+                    cur.points = [0, 0];
+                    cur.deuceCount = 0;
+                    cur.serveSide = cur.serveSide === 'left' ? 'right' : 'left';
+                    current.history.push({ action: 'game', side, ts: Date.now(), playerName: gameWinner });
+                    let setDone = false;
+                    if (cur.isTiebreak) { setDone = true;
+                        cur.isTiebreak = false; } else if (isSetWon(cur.games, cfg)) { setDone = true; } else if (
+                        shouldTiebreak(cur.games, cfg)) { cur.isTiebreak = true;
+                        cur.points = [0, 0]; }
+                    if (setDone) {
+                        current.score.sets[idx]++;
+                        const setWinner = side === 'left' ? current.players.left.name : current.players.right.name;
+                        cur.games = [0, 0];
+                        cur.isTiebreak = false;
+                        current.history.push({ action: 'set', side, ts: Date.now(), playerName: setWinner });
+                        if (current.score.sets[idx] >= cfg.setsToWin) {
+                            current.status.winner = side;
+                            current.status.phase = 'finished';
+                            current.history.push({ action: 'match', side, ts: Date.now(), playerName: setWinner });
+                        }
+                    }
+                } else if (cur.points[0] >= 3 && cur.points[1] >= 3 && cur.points[0] === cur.points[1]) {
+                    cur.deuceCount = (cur.deuceCount || 0) + 1;
+                }
+                return current;
+            }
+
+            function undoLastAction(current) {
+                if (!current || !current.history || !current.history.length) return current;
+                let idx = -1;
+                for (let i = current.history.length - 1; i >= 0; i--)
+                    if (current.history[i].action === 'point') { idx = i; break; }
+                if (idx === -1) return current;
+                const before = current.history[idx].before;
+                if (!before) return current;
+                current.score.sets = before.sets;
+                current.score.currentSet.games = before.games;
+                current.score.currentSet.points = before.points;
+                current.score.currentSet.isTiebreak = before.isTiebreak;
+                current.score.currentSet.deuceCount = before.deuceCount;
+                current.stats.totalPoints = Math.max(0, (current.stats.totalPoints || 0) - 1);
+                current.score.currentSet.serveSide = (before.games[0] + before.games[1]) % 2 === 0 ? 'left' : 'right';
+                current.history = current.history.slice(0, idx);
+                if (current.status.winner) { current.status.winner = null;
+                    current.status.phase = 'playing'; }
+                return current;
+            }
+
+            function determineWinner(setsArr) {
+                let l = 0,
+                    r = 0;
+                setsArr.forEach(s => { const [p0, p1] = s.split(':').map(Number); if (p0 > p1) l++; else if (p1 > p0)
+                        r++; });
+                return l > r ? 'left' : (r > l ? 'right' : null);
+            }
+
+            function validateSets(setsArr) {
+                if (!setsArr || setsArr.length === 0) return { valid: false, msg: 'Введите счёт' };
+                let l = 0,
+                    r = 0;
+                for (let s of setsArr) {
+                    const parts = s.split(':');
+                    if (parts.length !== 2) return { valid: false, msg: `Неверный формат: ${s}` };
+                    const p0 = parseInt(parts[0]),
+                        p1 = parseInt(parts[1]);
+                    if (isNaN(p0) || isNaN(p1) || p0 < 0 || p1 < 0) return { valid: false, msg: `Числа >=0: ${s}` };
+                    if (p0 > p1) l++;
+                    else if (p1 > p0) r++;
+                }
+                if (l === r) return { valid: false, msg: 'Ничья по сетам' };
+                return { valid: true, winner: l > r ? 'left' : 'right' };
+            }
+            return { MODES, getConfig, fmtPoints, isGameWon, processPoint, undoLastAction, otherSide: s => s === 'left' ?
+                    'right' : 'left', determineWinner, validateSets };
+        })();
+
+        // ═══════════════════════════════════════
+        // APP STATE
+        // ═══════════════════════════════════════
+        let currentUserId = null;
+        let currentMatchId = null;
+        let currentRole = 'player';
+        let currentMatchData = null;
+        let pointLock = false;
+        let lastChatSend = 0;
+        let currentUserName = null; // для автоназначения судьи
+
+        // ═══════════════════════════════════════
+        // DOM CACHE
+        // ═══════════════════════════════════════
+        const DOM = {
+            get appContainer() { return document.getElementById('appContainer'); },
+            get offlineBanner() { return document.getElementById('offlineBanner'); },
+            get liveIndicator() { return document.getElementById('liveIndicator'); },
+            get roleBadge() { return document.getElementById('roleBadge'); },
+            get notifBadge() { return document.getElementById('notifBadge'); },
+            get chatMessages() { return document.getElementById('chatMessages'); },
+            get chatInput() { return document.getElementById('chatInput'); },
+            get chatCharCount() { return document.getElementById('chatCharCount'); },
+            get historyEntries() { return document.getElementById('historyEntries'); },
+            get dashboardLiveList() { return document.getElementById('dashboardLiveList'); },
+            get dashboardMyMatches() { return document.getElementById('dashboardMyMatches'); },
+            get dashboardSkeleton() { return document.getElementById('dashboardSkeleton'); },
+            get leaderboardList() { return document.getElementById('leaderboardList'); },
+            get notificationsList() { return document.getElementById('notificationsList'); },
+            get friendsList() { return document.getElementById('friendsList'); },
+            get matchmakingList() { return document.getElementById('matchmakingList'); },
+            get matchmakingDesc() { return document.getElementById('matchmakingDesc'); },
+            get broadcastContent() { return document.getElementById('broadcastContent'); },
+            get yourLeagueCard() { return document.getElementById('yourLeagueCard'); },
+            get yourLeagueList() { return document.getElementById('yourLeagueList'); },
+            get pendingRequests() { return document.getElementById('pendingRequests'); },
+            get myInviteCode() { return document.getElementById('myInviteCode'); },
+            get profileName() { return document.getElementById('profileName'); },
+            get profileAvatar() { return document.getElementById('profileAvatar'); },
+            get profileRating() { return document.getElementById('profileRating'); },
+            get profileStreak() { return document.getElementById('profileStreak'); },
+            get profMatches() { return document.getElementById('profMatches'); },
+            get profWins() { return document.getElementById('profWins'); },
+            get profLosses() { return document.getElementById('profLosses'); },
+            get profWinrate() { return document.getElementById('profWinrate'); },
+            get profBadges() { return document.getElementById('profBadges'); },
+            get profRecentMatches() { return document.getElementById('profRecentMatches'); },
+            get btnChangeName() { return document.getElementById('btnChangeName'); },
+            get matchTournament() { return document.getElementById('matchTournament'); },
+            get matchJudgeInfo() { return document.getElementById('matchJudgeInfo'); },
+            get playerLeftName() { return document.getElementById('playerLeftName'); },
+            get playerRightName() { return document.getElementById('playerRightName'); },
+            get setsLeft() { return document.getElementById('setsLeft'); },
+            get setsRight() { return document.getElementById('setsRight'); },
+            get gamesLeft() { return document.getElementById('gamesLeft'); },
+            get gamesRight() { return document.getElementById('gamesRight'); },
+            get pointsLeft() { return document.getElementById('pointsLeft'); },
+            get pointsRight() { return document.getElementById('pointsRight'); },
+            get sideLeftBox() { return document.getElementById('sideLeftBox'); },
+            get sideRightBox() { return document.getElementById('sideRightBox'); },
+            get matchStatus() { return document.getElementById('matchStatus'); },
+            get btnPointLeft() { return document.getElementById('btnPointLeft'); },
+            get btnPointRight() { return document.getElementById('btnPointRight'); },
+            get btnUndo() { return document.getElementById('btnUndo'); },
+            get btnEndMatch() { return document.getElementById('btnEndMatch'); },
+            get btnInterruptMatch() { return document.getElementById('btnInterruptMatch'); },
+            get btnTransferJudge() { return document.getElementById('btnTransferJudge'); },
+            get btnRewind() { return document.getElementById('btnRewind'); },
+            get statTotalPoints() { return document.getElementById('statTotalPoints'); },
+            get statStreak() { return document.getElementById('statStreak'); },
+            get statLeftPts() { return document.getElementById('statLeftPts'); },
+            get statRightPts() { return document.getElementById('statRightPts'); },
+            get statLeftName() { return document.getElementById('statLeftName'); },
+            get statRightName() { return document.getElementById('statRightName'); },
+            get inpFriendCode() { return document.getElementById('inpFriendCode'); },
+            get inpScoreSelf() { return document.getElementById('inpScoreSelf'); },
+            get inpTournamentSelect() { return document.getElementById('inpTournamentSelect'); },
+            get inpRound() { return document.getElementById('inpRound'); },
+            get liveLeftSelect() { return document.getElementById('liveLeftSelect'); },
+            get liveRightSelect() { return document.getElementById('liveRightSelect'); },
+            get inpNewLiveLeft() { return document.getElementById('inpNewLiveLeft'); },
+            get inpNewLiveRight() { return document.getElementById('inpNewLiveRight'); },
+            get selLeftPlayer() { return document.getElementById('selLeftPlayer'); },
+            get selRightPlayer() { return document.getElementById('selRightPlayer'); },
+            get inpNewLeftPlayer() { return document.getElementById('inpNewLeftPlayer'); },
+            get inpNewRightPlayer() { return document.getElementById('inpNewRightPlayer'); },
+        };
+
+        // ═══════════════════════════════════════
+        // SCREEN MANAGER
+        // ═══════════════════════════════════════
+        function showScreen(id) {
+            $$('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(`screen-${id}`);
+            if (target) target.classList.add('active');
+            if (DOM.appContainer) DOM.appContainer.scrollTop = 0;
+            const navBtns = $$('.bottomnav button');
+            const navScreens = ['dashboard', 'leaderboard', 'friends', 'notifications'];
+            navBtns.forEach(b => {
+                b.classList.toggle('active', b.dataset.screen === id && navScreens.includes(id));
+            });
+            if (!navScreens.includes(id)) navBtns.forEach(b => b.classList.remove('active'));
+            updateLiveIndicator();
+            updateRoleBadge();
+        }
+
+        function updateRoleBadge() {
+            const b = DOM.roleBadge;
+            if (currentRole === 'judge') { b.textContent = '🧑‍⚖️ Судья';
+                b.className = 'role-badge judge'; } else if (currentRole === 'player') { b.textContent = '👤 Игрок';
+                b.className = 'role-badge player'; } else { b.textContent = '👀 Зритель';
+                b.className = 'role-badge spectator'; }
+        }
+
+        function updateLiveIndicator() {
+            retryFB(() => get(ref(db, 'matchList'))).then(snap => {
+                const all = snap.val() || {};
+                const hasLive = Object.values(all).some(m => m.type === 'live' && m.phase === 'playing');
+                DOM.liveIndicator.style.display = hasLive ? 'inline-block' : 'none';
+            }).catch(noop);
+        }
+
+        function updateOfflineBanner() {
+            DOM.offlineBanner.classList.toggle('show', !isOnline());
+        }
+
+        // ═══════════════════════════════════════
+        // FIREBASE HELPERS
+        // ═══════════════════════════════════════
+        const FB = {
+            async syncMatchList(matchId, m) {
+                if (!m || !matchId) return;
+                const entry = {
+                    type: m.type || 'live',
+                    tournament: m.tournamentName || '',
+                    playerLeft: m.players.left.name,
+                    playerRight: m.players.right.name,
+                    scoreSummary: m.type === 'live' ?
+                        `${m.score.sets[0]}:${m.score.sets[1]} (${m.score.currentSet.games[0]}:${m.score.currentSet.games[1]})` :
+                        (m.score.sets.join(' ') || ''),
+                    phase: m.status.winner ? (m.type === 'self' ? 'confirmed' : 'finished') : m.status.phase,
+                    updatedAt: serverTimestamp(),
+                    creatorId: m.creatorId || null,
+                    judgeId: m.judgeId || null,
+                    leftUserId: m.players.left.userId || null,
+                    rightUserId: m.players.right.userId || null,
+                    confirmLeft: m.confirmLeft || false,
+                    confirmRight: m.confirmRight || false,
+                    leftRating: m.players.left.rating || null,
+                    rightRating: m.players.right.rating || null,
+                    round: m.round || null,
+                };
+                await retryFB(() => update(ref(db), { [`matchList/${matchId}`]: entry }));
+            },
+            async applyRating(matchId, winnerSide) {
+                const matchRef = ref(db, `matches/${matchId}`);
+                try {
+                    const tres = await retryFB(() => runTransaction(matchRef, cur => { if (!cur || cur
+                            .ratingApplied) return;
+                        cur.ratingApplied = true; return cur; }));
+                    if (!tres.committed || !tres.snapshot.val()) return null;
+                    const m = tres.snapshot.val();
+                    const lUid = m.players.left?.userId,
+                        rUid = m.players.right?.userId;
+                    if (!lUid || !rUid) return null;
+                    const [lSnap, rSnap] = await Promise.all([retryFB(() => get(ref(db, `users/${lUid}`))),
+                        retryFB(() => get(ref(db, `users/${rUid}`)))
+                    ]);
+                    const lu = lSnap.val(),
+                        ru = rSnap.val();
+                    if (!lu || !ru) return null;
+                    const lr = lu.rating || 1000,
+                        rr = ru.rating || 1000;
+                    const K = 32;
+                    const el = 1 / (1 + Math.pow(10, (rr - lr) / 400));
+                    const er = 1 / (1 + Math.pow(10, (lr - rr) / 400));
+                    const lRes = winnerSide === 'left' ? 1 : 0,
+                        rRes = winnerSide === 'right' ? 1 : 0;
+                    const nlr = Math.round(lr + K * (lRes - el));
+                    const nrr = Math.round(rr + K * (rRes - er));
+                    const now = Date.now();
+                    await Promise.all([
+                        retryFB(() => runTransaction(ref(db, `users/${lUid}`), u => {
+                            if (!u) return u;
+                            u.rating = nlr;
+                            u.matchesPlayed = (u.matchesPlayed || 0) + 1;
+                            if (lRes === 1) { u.wins = (u.wins || 0) + 1;
+                                u.streak = Math.max(0, (u.streak || 0)) + 1;
+                                u.bestStreak = Math.max(u.bestStreak || 0, u.streak); } else { u.losses = (u
+                                    .losses || 0) + 1;
+                                u.streak = Math.min(0, (u.streak || 0)) - 1; }
+                            u.lastMatchAt = now;
+                            u.avgOppRating = u.avgOppRating ? Math.round((u.avgOppRating * (u.matchesPlayed -
+                                1) + rr) / u.matchesPlayed) : rr;
+                            if (!u.badges) u.badges = [];
+                            if (u.streak >= 5 && !u.badges.includes('hot5')) u.badges.push('hot5');
+                            if (u.streak >= 10 && !u.badges.includes('hot10')) u.badges.push('hot10');
+                            if (u.wins >= 50 && !u.badges.includes('iron50')) u.badges.push('iron50');
+                            if (lRes === 1 && rr - lr >= 100 && !u.badges.includes('underdog')) u.badges.push(
+                                'underdog');
+                            return u;
+                        })),
+                        retryFB(() => runTransaction(ref(db, `users/${rUid}`), u => {
+                            if (!u) return u;
+                            u.rating = nrr;
+                            u.matchesPlayed = (u.matchesPlayed || 0) + 1;
+                            if (rRes === 1) { u.wins = (u.wins || 0) + 1;
+                                u.streak = Math.max(0, (u.streak || 0)) + 1;
+                                u.bestStreak = Math.max(u.bestStreak || 0, u.streak); } else { u.losses = (u
+                                    .losses || 0) + 1;
+                                u.streak = Math.min(0, (u.streak || 0)) - 1; }
+                            u.lastMatchAt = now;
+                            u.avgOppRating = u.avgOppRating ? Math.round((u.avgOppRating * (u.matchesPlayed -
+                                1) + lr) / u.matchesPlayed) : lr;
+                            if (!u.badges) u.badges = [];
+                            if (u.streak >= 5 && !u.badges.includes('hot5')) u.badges.push('hot5');
+                            if (u.streak >= 10 && !u.badges.includes('hot10')) u.badges.push('hot10');
+                            if (u.wins >= 50 && !u.badges.includes('iron50')) u.badges.push('iron50');
+                            if (rRes === 1 && lr - rr >= 100 && !u.badges.includes('underdog')) u.badges.push(
+                                'underdog');
+                            return u;
+                        }))
+                    ]);
+                    const deltaL = nlr - lr,
+                        deltaR = nrr - rr;
+                    await retryFB(() => update(matchRef, { ratingChanges: { left: deltaL, right: deltaR } }));
+                    return { left: deltaL, right: deltaR, leftName: m.players.left.name, rightName: m.players.right
+                            .name };
+                } catch (e) { console.error('Rating error', e); return null; }
+            },
+            generateInviteCode() { return 'TL' + Math.random().toString(36).substring(2, 8).toUpperCase(); },
+            async getUserName(uid) {
+                if (!uid) return 'Неизвестный';
+                const snap = await retryFB(() => get(ref(db, `users/${uid}`)));
+                const u = snap.val();
+                return u ? u.name : 'Неизвестный';
+            },
+            async sendNotification(userId, notification) {
+                if (!userId || userId === currentUserId) return;
+                const notifRef = push(ref(db, `users/${userId}/notifications`));
+                await retryFB(() => set(notifRef, { ...notification, ts: Date.now(), read: false }));
+            },
+            async getUserSafe(uid) {
+                if (!uid) return null;
+                const snap = await retryFB(() => get(ref(db, `users/${uid}`)));
+                return snap.val();
+            }
+        };
+
+        // ═══════════════════════════════════════
+        // USER MANAGER (localStorage-based)
+        // ═══════════════════════════════════════
+        async function initUser() {
+            let storedUid = null;
+            try { storedUid = localStorage.getItem(LS_UID_KEY); } catch (e) {}
+            if (storedUid) {
+                const existing = await FB.getUserSafe(storedUid);
+                if (existing) {
+                    currentUserId = storedUid;
+                    if (!existing.inviteCode) {
+                        await retryFB(() => update(ref(db, `users/${storedUid}`), { inviteCode: FB
+                            .generateInviteCode() }));
+                    }
+                    onUserReady();
+                    return;
+                }
+            }
+            const uRef = push(ref(db, 'users'));
+            const newId = uRef.key;
+            await retryFB(() => set(uRef, {
+                name: 'Игрок',
+                rating: 1000,
+                matchesPlayed: 0,
+                wins: 0,
+                losses: 0,
+                streak: 0,
+                bestStreak: 0,
+                avgOppRating: 1000,
+                badges: [],
+                inviteCode: FB.generateInviteCode(),
+                friends: {},
+                createdAt: Date.now()
+            }));
+            currentUserId = newId;
+            try { localStorage.setItem(LS_UID_KEY, newId); } catch (e) {}
+            onUserReady();
+        }
+
+        function onUserReady() {
+            currentRole = 'player';
+            updateRoleBadge();
+            // загружаем имя текущего пользователя для последующего автоназначения судьи
+            FB.getUserSafe(currentUserId).then(u => {
+                if (u) currentUserName = u.name || 'Игрок';
+            });
+            loadDashboard();
+            subscribeNotifications();
+            showScreen('dashboard');
+            updateLiveIndicator();
+            setInterval(updateLiveIndicator, 15000);
+        }
+
+        // ═══════════════════════════════════════
+        // NOTIFICATIONS SUBSCRIPTION
+        // ═══════════════════════════════════════
+        function subscribeNotifications() {
+            SubManager.remove('notifs');
+            if (!currentUserId) return;
+            const unsub = onValue(ref(db, `users/${currentUserId}/notifications`), snap => {
+                const notifs = snap.val() || {};
+                const unread = Object.values(notifs).filter(n => !n.read).length;
+                const badge = DOM.notifBadge;
+                if (unread > 0) { badge.classList.add('show');
+                    badge.textContent = unread; } else { badge.classList.remove('show'); }
+            }, err => { console.warn('Notif sub error', err); });
+            SubManager.add('notifs', unsub);
+        }
+
+        function loadNotifications() {
+            if (!currentUserId) return;
+            const list = DOM.notificationsList;
+            list.innerHTML = '<div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line short"></div>';
+            retryFB(() => get(ref(db, `users/${currentUserId}/notifications`))).then(snap => {
+                const notifs = snap.val() || {};
+                const sorted = Object.entries(notifs).sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+                if (!sorted.length) {
+                    list.innerHTML =
+                        '<div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-title">Нет уведомлений</div><div class="empty-desc">Здесь будут появляться приглашения и оповещения о матчах</div></div>';
+                    return;
+                }
+                const icons = { invite: '📨', match_start: '🎾', match_end: '🏆', judge_transfer: '🧑‍⚖️',
+                    friend_request: '👥', friend_accepted: '✅' };
+                list.innerHTML = sorted.map(([id, n]) => `
+              <div class="notif-item" style="${n.read?'opacity:0.5':''}">
+                <span style="font-size:1.2rem;flex-shrink:0">${icons[n.type]||'🔔'}</span>
+                <div style="flex:1"><div>${n.message}</div><div style="font-size:0.55rem;color:var(--text2)">${new Date(n.ts||0).toLocaleString()}</div></div>
+                ${!n.read?`<button class="btn small" data-notif-id="${id}" onclick="window._markNotifRead('${id}')">✓</button>`:''}
+              </div>`).join('');
+            }).catch(() => {
+                list.innerHTML =
+                    '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Ошибка загрузки</div></div>';
+            });
+        }
+
+        async function markNotifRead(notifId) {
+            if (!currentUserId) return;
+            await retryFB(() => update(ref(db, `users/${currentUserId}/notifications/${notifId}`), { read: true }));
+            loadNotifications();
+        }
+        window._markNotifRead = markNotifRead;
+
+        // ═══════════════════════════════════════
+        // DASHBOARD
+        // ═══════════════════════════════════════
+        function loadDashboard() {
+            SubManager.remove('matchList');
+            const skel = DOM.dashboardSkeleton;
+            if (skel) skel.style.display = 'block';
+            const unsub = onValue(ref(db, 'matchList'), snap => {
+                if (skel) skel.style.display = 'none';
+                const all = snap.val() || {};
+                const entries = Object.entries(all);
+                const liveMatches = entries.filter(([_, m]) => m.type === 'live' && m.phase === 'playing');
+                const myMatches = entries.filter(([_, m]) =>
+                    (m.leftUserId === currentUserId || m.rightUserId === currentUserId || m.creatorId ===
+                        currentUserId || m.judgeId === currentUserId) &&
+                    (m.phase === 'pending' || m.phase === 'playing' || m.phase === 'interrupted')
+                );
+                DOM.dashboardLiveList.innerHTML = liveMatches.map(([id, m]) => `
+            <div class="match-card" data-id="${id}">
+              <span class="live-tag">LIVE</span>
+              <div class="players-row">
+                <div class="player-col"><div class="player-name">${m.playerLeft}</div><div class="player-rating">${m.leftRating||'--'}</div></div>
+                <div><span class="vs-text">VS</span><br><span class="score-display">${m.scoreSummary}</span></div>
+                <div class="player-col"><div class="player-name">${m.playerRight}</div><div class="player-rating">${m.rightRating||'--'}</div></div>
+              </div>
+              ${m.judgeId?`<div class="judge-tag">🧑‍⚖️ Судья матча</div>`:''}
+            </div>`).join('') ||
+                    '<div class="empty-state"><div class="empty-icon">🎾</div><div class="empty-title">Нет активных матчей</div><div class="empty-desc">Создайте новый матч или присоединитесь к существующему</div></div>';
+                DOM.dashboardMyMatches.innerHTML = myMatches.map(([id, m]) => `
+            <div class="match-card" data-id="${id}">
+              <div class="players-row">
+                <div class="player-col"><div class="player-name">${m.playerLeft}</div></div>
+                <div><span class="vs-text">VS</span><br><span class="score-display">${m.scoreSummary||'--'}</span></div>
+                <div class="player-col"><div class="player-name">${m.playerRight}</div></div>
+              </div>
+              <div style="text-align:center;font-size:0.7rem;color:var(--text2);margin-top:4px">${m.phase==='pending'?'🕒 Ожидает':m.phase}${m.judgeId===currentUserId?' · 🧑‍⚖️ Вы судья':''}</div>
+            </div>`).join('') ||
+                    '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Нет активных матчей</div></div>';
+                bindDashboardClicks();
+            }, err => {
+                if (skel) skel.style.display = 'none';
+                DOM.dashboardLiveList.innerHTML =
+                    '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Ошибка загрузки</div></div>';
+            });
+            SubManager.add('matchList', unsub);
+        }
+
+        function bindDashboardClicks() {
+            $$('#dashboardLiveList .match-card').forEach(el => {
+                el.onclick = () => openLiveMatchAsSpectator(el.dataset.id);
+            });
+            $$('#dashboardMyMatches .match-card').forEach(el => {
+                el.onclick = () => openMyMatch(el.dataset.id);
+            });
+        }
+
+        function openLiveMatchAsSpectator(matchId) {
+            currentMatchId = matchId;
+            currentRole = 'spectator';
+            updateRoleBadge();
+            subscribeMatchForBroadcast(matchId);
+            showScreen('broadcast');
+        }
+
+        function openMyMatch(matchId) {
+            retryFB(() => get(ref(db, `matches/${matchId}`))).then(snap => {
+                const m = snap.val();
+                if (!m) return showToast('Матч не найден');
+                if (m.type === 'live' && (m.status.phase === 'playing' || m.status.phase === 'interrupted')) {
+                    currentMatchId = matchId;
+                    if (m.judgeId === currentUserId) currentRole = 'judge';
+                    else if (m.players.left.userId === currentUserId || m.players.right.userId === currentUserId)
+                        currentRole = 'player';
+                    else currentRole = 'spectator';
+                    updateRoleBadge();
+                    subscribeMatchForLive(matchId);
+                    subscribeChat(matchId);
+                    showScreen('live-match');
+                } else if (m.type === 'self' && m.status.phase === 'pending') {
+                    showSelfMatchModal(matchId, m);
+                } else {
+                    showToast('Матч завершён');
+                    loadDashboard();
+                }
+            }).catch(() => showToast('Ошибка загрузки матча'));
+        }
+
+        // ═══════════════════════════════════════
+        // MATCHMAKING
+        // ═══════════════════════════════════════
+        let currentMatchmakingFilter = 'all';
+
+        function loadMatchmaking() {
+            const list = DOM.matchmakingList;
+            list.innerHTML = '<div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line short"></div>';
+            retryFB(() => get(ref(db, `users/${currentUserId}`))).then(snap => {
+                const me = snap.val();
+                if (!me) return;
+                const myR = me.rating || 1000;
+                const myFriends = me.friends || {};
+                retryFB(() => get(ref(db, 'users'))).then(uSnap => {
+                    const users = uSnap.val() || {};
+                    let rivals = Object.entries(users).filter(([id]) => id !== currentUserId);
+                    if (currentMatchmakingFilter === 'friends') {
+                        DOM.matchmakingDesc.textContent = 'Ваши друзья';
+                        rivals = rivals.filter(([id]) => myFriends[id]);
+                    } else if (currentMatchmakingFilter === 'rating') {
+                        DOM.matchmakingDesc.textContent = 'Игроки с рейтингом ±100 от вашего';
+                        rivals = rivals.filter(([_, u]) => Math.abs((u.rating || 1000) - myR) <= 100);
+                    } else {
+                        DOM.matchmakingDesc.textContent = 'Все игроки';
+                    }
+                    rivals.sort((a, b) => (b[1].rating || 1000) - (a[1].rating || 1000));
+                    if (!rivals.length) {
+                        list.innerHTML =
+                            '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Нет подходящих соперников</div></div>';
+                        return;
+                    }
+                    list.innerHTML = rivals.map(([id, u]) => `
+                <div class="lb-item" style="cursor:pointer">
+                  <div class="lb-info"><div class="lb-name">${u.name} ${myFriends[id]?'<span class="friend-tag">Друг</span>':''}</div><div style="font-size:0.65rem;color:var(--text2)">Рейтинг: ${u.rating||1000} · Матчей: ${u.matchesPlayed||0}</div>${u.streak>=3?`<span class="streak-badge">🔥${u.streak}</span>`:''}</div>
+                  <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+                    <button class="btn small primary pick-rival" data-id="${id}">Выбрать</button>
+                    <button class="btn small quick-invite" data-id="${id}" data-name="${u.name}" style="font-size:0.6rem;background:var(--blue);color:#fff">⚡ Вызов</button>
+                  </div></div>`).join('');
+                    bindMatchmakingButtons(myFriends);
+                });
+            }).catch(() => {
+                list.innerHTML =
+                    '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Ошибка загрузки</div></div>';
+            });
+        }
+
+        function bindMatchmakingButtons(myFriends) {
+            $$('.pick-rival').forEach(b => {
+                b.onclick = async (e) => {
+                    e.stopPropagation();
+                    vibrate(8);
+                    await loadSelects();
+                    DOM.liveRightSelect.value = b.dataset.id;
+                    DOM.inpNewLiveRight.value = '';
+                    DOM.liveLeftSelect.value = currentUserId;
+                    showScreen('quick-setup');
+                };
+            });
+            $$('.quick-invite').forEach(b => {
+                b.onclick = async (e) => {
+                    e.stopPropagation();
+                    vibrate(8);
+                    const rivalId = b.dataset.id;
+                    const rivalName = b.dataset.name;
+                    const meSnap = await retryFB(() => get(ref(db, `users/${currentUserId}`)));
+                    const myName = meSnap.val()?.name || 'Игрок';
+                    await FB.sendNotification(rivalId, { type: 'invite',
+                        message: `${myName} вызывает вас на матч!`, fromUserId: currentUserId,
+                        fromName: myName });
+                    showToast(`⚡ Вызов отправлен ${rivalName}!`);
+                };
+            });
+        }
+
+        // ═══════════════════════════════════════
+        // LEADERBOARD
+        // ═══════════════════════════════════════
+        function loadLeaderboard(period = 'all') {
+            $$('.lb-filter').forEach(b => b.classList.toggle('active', b.dataset.period === period));
+            const list = DOM.leaderboardList;
+            list.innerHTML = '<div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line short"></div>';
+            Promise.all([retryFB(() => get(ref(db, 'users'))), retryFB(() => get(ref(db, 'matches')))])
+                .then(([uSnap, mSnap]) => {
+                    const users = uSnap.val() || {};
+                    const matches = Object.values(mSnap.val() || {}).filter(m =>
+                        (m.type === 'self' && m.status?.phase === 'confirmed') || (m.type === 'live' && m.status
+                            ?.phase === 'finished')
+                    );
+                    const now = Date.now(),
+                        wk = now - 7 * 86400000,
+                        mo = now - 30 * 86400000;
+                    const listData = Object.entries(users).map(([id, u]) => {
+                        let wins = u.wins || 0,
+                            losses = u.losses || 0;
+                        if (period !== 'all') {
+                            const recent = matches.filter(m => { const t = m.finishedAt || m.createdAt || 0; return period ===
+                                    'week' ? t > wk : t > mo; });
+                            wins = 0;
+                            losses = 0;
+                            recent.forEach(m => { if ((m.players.left.userId === id && m.status.winner ===
+                                    'left') || (m.players.right.userId === id && m.status.winner ===
+                                    'right')) wins++; else if (m.players.left.userId === id || m.players
+                                    .right.userId === id) losses++; });
+                        }
+                        const wr = (wins + losses) > 0 ? Math.round(wins / (wins + losses) * 100) : 0;
+                        return { id, name: u.name, rating: u.rating || 1000, wins, losses, wr, streak: u.streak || 0,
+                            badges: u.badges || [], avgOppRating: u.avgOppRating || 1000, friends: u.friends ||
+                                {} };
+                    }).sort((a, b) => b.rating - a.rating);
+                    const top10 = listData.slice(0, 10);
+                    const rankEmojis = ['🥇', '🥈', '🥉'];
+                    list.innerHTML = top10.map((u, i) => {
+                        const rc = i < 3 ? 'top3' : '';
+                        const rcol = i === 0 ? 'gold' : (i === 1 ? 'silver' : (i === 2 ? 'bronze' : ''));
+                        const stHtml = u.streak >= 3 ? `<span class="streak-badge">🔥${u.streak}</span>` : (u
+                            .streak <= -3 ?
+                            `<span style="color:var(--red);font-size:0.65rem">❄️${Math.abs(u.streak)}</span>` :
+                            '');
+                        const bHtml = u.badges.slice(0, 3).map(b => {
+                            const lb = { hot5: '🔥5', hot10: '🔥10', iron50: '💪50', underdog: '🐶Андердог' };
+                            return `<span class="badge gold-badge">${lb[b]||b}</span>`;
+                        }).join('');
+                        return `<div class="lb-item ${rc}" onclick="window._openPlayerStats('${u.id}')">
+                  <div class="lb-rank ${rcol}">${i<3?rankEmojis[i]:i+1}</div>
+                  <div class="lb-info"><div class="lb-name">${u.name} ${stHtml}</div><div style="font-size:0.65rem;color:var(--text2)">Winrate ${u.wr}% · ~${u.avgOppRating}</div>${bHtml}</div>
+                  <div class="lb-rating">${u.rating}</div></div>`;
+                    }).join('') ||
+                        '<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-title">Нет данных</div></div>';
+                    const myData = listData.find(u => u.id === currentUserId);
+                    if (myData && myData.friends) loadYourLeague(myData.friends, listData);
+                }).catch(() => {
+                    list.innerHTML =
+                        '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Ошибка загрузки</div></div>';
+                });
+        }
+
+        function loadYourLeague(friendIds, allList) {
+            if (!friendIds || !Object.keys(friendIds).length) { DOM.yourLeagueCard.style.display = 'none'; return; }
+            const fl = allList.filter(u => friendIds[u.id] || u.id === currentUserId).sort((a, b) => b.rating - a.rating);
+            DOM.yourLeagueCard.style.display = 'block';
+            DOM.yourLeagueList.innerHTML = fl.slice(0, 8).map((u, i) => `
+            <div class="lb-item" onclick="window._openPlayerStats('${u.id}')">
+              <div class="lb-rank">${i+1}</div>
+              <div class="lb-info"><div class="lb-name">${u.name} ${u.id===currentUserId?'<span class="friend-tag">Вы</span>':''}</div></div>
+              <div class="lb-rating">${u.rating}</div></div>`).join('') || '<p style="color:var(--text2)">Нет данных</p>';
+        }
+
+        // ═══════════════════════════════════════
+        // FRIENDS
+        // ═══════════════════════════════════════
+        function loadFriends() {
+            if (!currentUserId) return;
+            retryFB(() => get(ref(db, `users/${currentUserId}`))).then(snap => {
+                const me = snap.val();
+                if (!me) return;
+                DOM.myInviteCode.textContent = me.inviteCode || '----';
+                const friendIds = me.friends || {};
+                if (!Object.keys(friendIds).length) {
+                    DOM.friendsList.innerHTML =
+                        '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Нет друзей</div><div class="empty-desc">Пригласите друзей по коду или найдите их в рейтинге</div></div>';
+                    DOM.pendingRequests.innerHTML = '';
+                    return;
+                }
+                Promise.all(Object.keys(friendIds).map(id => retryFB(() => get(ref(db, `users/${id}`))))).then(
+                    snaps => {
+                        DOM.friendsList.innerHTML = snaps.map((s, i) => {
+                            const u = s.val();
+                            if (!u) return '';
+                            const fid = Object.keys(friendIds)[i];
+                            return `<div class="lb-item" style="cursor:pointer" onclick="window._openPlayerStats('${fid}')">
+                      <div class="lb-info"><div class="lb-name">${u.name}</div></div>
+                      <div class="lb-rating">${u.rating||1000}</div></div>`;
+                        }).join('') ||
+                            '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Нет друзей</div></div>';
+                    });
+                loadPendingRequests();
+            }).catch(() => {
+                DOM.friendsList.innerHTML =
+                    '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Ошибка загрузки</div></div>';
+            });
+        }
+
+        function loadPendingRequests() {
+            if (!currentUserId) return;
+            retryFB(() => get(ref(db, `users/${currentUserId}/friendRequests`))).then(snap => {
+                const reqs = snap.val() || {};
+                const entries = Object.entries(reqs).filter(([_, r]) => r.status === 'pending');
+                if (!entries.length) { DOM.pendingRequests.innerHTML = ''; return; }
+                DOM.pendingRequests.innerHTML =
+                    '<h4 style="margin-top:8px">📨 Запросы в друзья</h4>' + entries.map(([id, r]) => `
+              <div class="lb-item"><div class="lb-info"><div class="lb-name">${r.fromName||'Игрок'}</div></div>
+                <button class="btn small success" onclick="window._acceptFriendReq('${id}')">✓</button>
+                <button class="btn small danger" onclick="window._declineFriendReq('${id}')">✕</button></div>`).join(
+                    '');
+            }).catch(noop);
+        }
+
+        async function acceptFriendRequest(reqId) {
+            if (!currentUserId) return;
+            const reqSnap = await retryFB(() => get(ref(db, `users/${currentUserId}/friendRequests/${reqId}`)));
+            const req = reqSnap.val();
+            if (!req || req.status !== 'pending') return;
+            const fromId = req.fromId;
+            await retryFB(() => update(ref(db, `users/${currentUserId}/friends/${fromId}`), true));
+            await retryFB(() => update(ref(db, `users/${fromId}/friends/${currentUserId}`), true));
+            await retryFB(() => update(ref(db, `users/${currentUserId}/friendRequests/${reqId}`), { status: 'accepted' }));
+            await FB.sendNotification(fromId, { type: 'friend_accepted',
+                message: `${req.toName||'Игрок'} принял ваш запрос в друзья!` });
+            showToast('✅ Запрос принят!');
+            loadFriends();
+        }
+        window._acceptFriendReq = acceptFriendRequest;
+
+        async function declineFriendRequest(reqId) {
+            if (!currentUserId) return;
+            await retryFB(() => remove(ref(db, `users/${currentUserId}/friendRequests/${reqId}`)));
+            showToast('Запрос отклонён');
+            loadFriends();
+        }
+        window._declineFriendReq = declineFriendRequest;
+
+        async function addFriendByCode() {
+            const code = DOM.inpFriendCode.value.trim().toUpperCase();
+            if (!code) return showToast('Введите код');
+            const uSnap = await retryFB(() => get(ref(db, 'users')));
+            const users = uSnap.val() || {};
+            const found = Object.entries(users).find(([_, u]) => u.inviteCode === code);
+            if (!found) return showToast('❌ Код не найден');
+            const [friendId, friendData] = found;
+            if (friendId === currentUserId) return showToast('❌ Это ваш код');
+            if (users[currentUserId]?.friends?.[friendId]) return showToast('Уже в друзьях');
+            const myName = users[currentUserId]?.name || 'Игрок';
+            await retryFB(() => set(ref(db, `users/${friendId}/friendRequests/${currentUserId}`), {
+                fromId: currentUserId,
+                fromName: myName,
+                toName: friendData.name,
+                status: 'pending',
+                ts: Date.now()
+            }));
+            await FB.sendNotification(friendId, { type: 'friend_request',
+                message: `${myName} хочет добавить вас в друзья!` });
+            showToast('📨 Запрос отправлен!');
+            DOM.inpFriendCode.value = '';
+        }
+
+        function copyInviteCode() {
+            const code = DOM.myInviteCode.textContent;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(code).then(() => showToast('📋 Код скопирован!'));
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = code;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('📋 Код скопирован!');
+            }
+            vibrate(15);
+        }
+
+        // ═══════════════════════════════════════
+        // PLAYER STATS / PROFILE
+        // ═══════════════════════════════════════
+        function openPlayerStats(playerId) {
+            retryFB(() => get(ref(db, `users/${playerId}`))).then(uSnap => {
+                const u = uSnap.val();
+                if (!u) return showToast('Игрок не найден');
+                DOM.profileAvatar.textContent = (u.name || '?')[0].toUpperCase();
+                DOM.profileName.textContent = u.name || 'Игрок';
+                DOM.profileRating.textContent = u.rating || 1000;
+                const streakHtml = u.streak >= 3 ? `<span class="streak-badge">🔥${u.streak}</span>` : (u.streak <= -
+                    3 ? `<span style="color:var(--red);font-size:0.65rem">❄️${Math.abs(u.streak)}</span>` : '');
+                DOM.profileStreak.innerHTML = streakHtml;
+                DOM.profMatches.textContent = u.matchesPlayed || 0;
+                DOM.profWins.textContent = u.wins || 0;
+                DOM.profLosses.textContent = u.losses || 0;
+                const total = (u.wins || 0) + (u.losses || 0);
+                DOM.profWinrate.textContent = total > 0 ? Math.round((u.wins || 0) / total * 100) + '%' : '--';
+                const badgeLabels = { hot5: '🔥5 побед подряд', hot10: '🔥10 побед подряд', iron50: '💪50 побед',
+                    underdog: '🐶 Победа над сильным' };
+                const badges = u.badges || [];
+                DOM.profBadges.innerHTML = badges.length ? badges.map(b =>
+                    `<span class="badge gold-badge">${badgeLabels[b]||b}</span>`).join(' ') :
+                    '<span style="color:var(--text2);font-size:0.7rem">Нет достижений</span>';
+                DOM.btnChangeName.style.display = playerId === currentUserId ? 'inline-flex' : 'none';
+                retryFB(() => get(ref(db, 'matches'))).then(mSnap => {
+                    const all = mSnap.val() || {};
+                    const myMatches = Object.values(all).filter(m =>
+                        (m.players?.left?.userId === playerId || m.players?.right?.userId === playerId) &&
+                        (m.status?.phase === 'finished' || m.status?.phase === 'confirmed')
+                    ).sort((a, b) => (b.finishedAt || b.createdAt || 0) - (a.finishedAt || a.createdAt || 0))
+                        .slice(0, 5);
+                    DOM.profRecentMatches.innerHTML = myMatches.length ? myMatches.map(m => {
+                        const isLeft = m.players?.left?.userId === playerId;
+                        const won = (isLeft && m.status?.winner === 'left') || (!isLeft && m.status
+                            ?.winner === 'right');
+                        const vs = isLeft ? m.players?.right?.name : m.players?.left?.name;
+                        return `<div style="font-size:0.7rem;padding:4px 0;display:flex;justify-content:space-between;border-bottom:1px solid var(--border)"><span>${won?'🟢':'🔴'} vs ${vs||'--'}</span><span>${m.score?.sets?.join(' ')||'--'}</span></div>`;
+                    }).join('') :
+                        '<span style="color:var(--text2);font-size:0.7rem">Нет матчей</span>';
+                }).catch(noop);
+                showScreen('profile');
+            }).catch(() => showToast('Ошибка загрузки профиля'));
+        }
+        window._openPlayerStats = openPlayerStats;
+
+        async function changeName() {
+            const newName = prompt('Новое имя:', DOM.profileName.textContent);
+            if (!newName || !newName.trim()) return;
+            await retryFB(() => update(ref(db, `users/${currentUserId}`), { name: newName.trim() }));
+            DOM.profileName.textContent = newName.trim();
+            DOM.profileAvatar.textContent = newName.trim()[0].toUpperCase();
+            currentUserName = newName.trim(); // синхронизируем кэш имени
+            showToast('✅ Имя обновлено!');
+        }
+
+        // ═══════════════════════════════════════
+        // LIVE MATCH RENDERING
+        // ═══════════════════════════════════════
+        let _lastRenderedPointsL = '',
+            _lastRenderedPointsR = '';
+        let _prevGameWinner = null,
+            _prevSetWinner = null;
+
+        function subscribeMatchForLive(matchId) {
+            SubManager.clearByPrefix('match_');
+            const unsub = onValue(ref(db, `matches/${matchId}`), snap => {
+                const m = snap.val();
+                if (!m) { showScreen('dashboard');
+                    loadDashboard(); return; }
+                currentMatchData = m;
+                requestAnimationFrame(() => {
+                    renderLiveUI(m);
+                    renderHistory(m);
+                    renderMatchStats(m);
+                });
+                updateJudgeTransferButton(m);
+            }, err => { console.warn('Match sub error', err); });
+            SubManager.add('match_live', unsub);
+        }
+
+        function subscribeChat(matchId) {
+            SubManager.remove('match_chat');
+            const unsub = onValue(ref(db, `matches/${matchId}/chat`), snap => {
+                const messages = snap.val() || {};
+                const sorted = Object.values(messages).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+                const chatDiv = DOM.chatMessages;
+                if (!sorted.length) {
+                    chatDiv.innerHTML =
+                        '<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-desc">Нет сообщений</div></div>';
+                    return;
+                }
+                const wasAtBottom = chatDiv.scrollHeight - chatDiv.scrollTop - chatDiv.clientHeight < 60;
+                chatDiv.innerHTML = sorted.map(msg => {
+                    const isMy = msg.senderId === currentUserId;
+                    const roleLabel = msg.senderRole === 'judge' ? '🧑‍⚖️' : (msg.senderRole === 'player' ?
+                        '👤' : '👀');
+                    const reactionsHtml = (msg.reactions && Object.keys(msg.reactions).length) ? Object
+                        .entries(msg.reactions).map(([r, count]) =>
+                            `<span class="badge" style="cursor:pointer;margin:1px" onclick="window._addReaction('${msg.id}','${r}')">${r} ${count}</span>`
+                            ).join('') : '';
+                    return `<div class="chat-message ${isMy?'my-msg':'other-msg'}" data-msg-id="${msg.id}">
+                <span class="msg-sender"><span style="font-size:0.5rem;padding:1px 4px;border-radius:4px;background:rgba(255,165,2,0.2);color:var(--gold)">${roleLabel}</span> ${msg.senderName||'Аноним'}<span class="msg-time">${new Date(msg.ts||0).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></span>
+                <div>${msg.text}</div>${reactionsHtml?`<div style="display:flex;gap:3px;margin-top:4px;flex-wrap:wrap">${reactionsHtml}</div>`:''}</div>`;
+                }).join('');
+                if (wasAtBottom) chatDiv.scrollTop = chatDiv.scrollHeight;
+            }, err => { console.warn('Chat sub error', err); });
+            SubManager.add('match_chat', unsub);
+        }
+
+        function renderLiveUI(m) {
+            const cur = m.score.currentSet;
+            const pts = GameEngine.fmtPoints(cur.points, cur.isTiebreak);
+            const prevL = _lastRenderedPointsL,
+                prevR = _lastRenderedPointsR;
+            _lastRenderedPointsL = pts[0];
+            _lastRenderedPointsR = pts[1];
+
+            const leftRoleHtml = m.players.left.userId === currentUserId ? '<span style="color:var(--blue)">👤</span>' :
+                '';
+            const rightRoleHtml = m.players.right.userId === currentUserId ? '<span style="color:var(--blue)">👤</span>' :
+                '';
+
+            DOM.playerLeftName.innerHTML = leftRoleHtml + m.players.left.name + (cur.serveSide === 'left' ?
+                ' <span class="serve-dot"></span>' : '');
+            DOM.playerRightName.innerHTML = (cur.serveSide === 'right' ? '<span class="serve-dot"></span> ' : '') + m
+                .players.right.name + rightRoleHtml;
+            DOM.setsLeft.textContent = m.score.sets[0];
+            DOM.setsRight.textContent = m.score.sets[1];
+            DOM.gamesLeft.textContent = cur.games[0];
+            DOM.gamesRight.textContent = cur.games[1];
+            DOM.pointsLeft.textContent = pts[0];
+            DOM.pointsRight.textContent = pts[1];
+            DOM.matchTournament.textContent = m.tournamentName || '';
+
+            if (m.judgeId && m.judgeName) {
+                DOM.matchJudgeInfo.innerHTML =
+                    `<span class="judge-info">🧑‍⚖️ Судья: ${m.judgeName}${m.judgeId===currentUserId?' (Вы)':''}</span>`;
+            } else if (m.judgeId) {
+                FB.getUserName(m.judgeId).then(name => {
+                    DOM.matchJudgeInfo.innerHTML =
+                        `<span class="judge-info">🧑‍⚖️ Судья: ${name}${m.judgeId===currentUserId?' (Вы)':''}</span>`;
+                });
+            } else {
+                DOM.matchJudgeInfo.innerHTML = '<span style="color:var(--red);font-size:0.7rem">⚠️ Нет судьи</span>';
+            }
+
+            DOM.sideLeftBox.classList.toggle('my-side', m.players.left.userId === currentUserId && currentRole ===
+                'player');
+            DOM.sideRightBox.classList.toggle('my-side', m.players.right.userId === currentUserId && currentRole ===
+                'player');
+            DOM.sideLeftBox.classList.toggle('serving', cur.serveSide === 'left');
+            DOM.sideRightBox.classList.toggle('serving', cur.serveSide === 'right');
+            DOM.sideLeftBox.classList.toggle('winner', m.status.winner === 'left');
+            DOM.sideRightBox.classList.toggle('winner', m.status.winner === 'right');
+
+            if (m.history && m.history.length >= 1) {
+                const lastH = m.history[m.history.length - 1];
+                if (lastH.action === 'game' && _prevGameWinner !== lastH.playerName) {
+                    _prevGameWinner = lastH.playerName;
+                    const sideBox = lastH.side === 'left' ? DOM.sideLeftBox : DOM.sideRightBox;
+                    sideBox.classList.add('game-win-flash');
+                    vibrate(30);
+                    setTimeout(() => sideBox.classList.remove('game-win-flash'), 600);
+                }
+                if (lastH.action === 'set' && _prevSetWinner !== lastH.playerName) {
+                    _prevSetWinner = lastH.playerName;
+                    const sideBox = lastH.side === 'left' ? DOM.sideLeftBox : DOM.sideRightBox;
+                    sideBox.classList.add('set-win-flash');
+                    vibrate([30, 50, 30]);
+                    setTimeout(() => sideBox.classList.remove('set-win-flash'), 800);
+                }
+                if (lastH.action === 'match') {
+                    vibrate([50, 30, 50, 30, 100]);
+                    showToast(`🏆 ${lastH.playerName} выиграл матч!`);
+                }
+            }
+
+            if (prevL !== pts[0]) { DOM.pointsLeft.classList.add('pulse');
+                vibrate(8);
+                setTimeout(() => DOM.pointsLeft.classList.remove('pulse'), 350); }
+            if (prevR !== pts[1]) { DOM.pointsRight.classList.add('pulse');
+                vibrate(8);
+                setTimeout(() => DOM.pointsRight.classList.remove('pulse'), 350); }
+
+            // Определение судьи через judgeId, а не currentRole
+            const isJudge = m.judgeId === currentUserId;
+            const w = m.status.winner;
+            if (w) {
+                DOM.matchStatus.innerHTML =
+                    `🏆 <strong>${w==='left'?m.players.left.name:m.players.right.name}</strong>`;
+                DOM.btnPointLeft.disabled = DOM.btnPointRight.disabled = true;
+                DOM.btnEndMatch.style.display = 'none';
+                DOM.btnInterruptMatch.textContent = 'Удалить';
+                DOM.btnUndo.disabled = true;
+            } else if (m.status.phase === 'interrupted') {
+                DOM.matchStatus.textContent = '⏸ Прерван';
+                DOM.btnPointLeft.disabled = DOM.btnPointRight.disabled = true;
+                DOM.btnInterruptMatch.textContent = isJudge ? 'Продолжить' : 'Прерван';
+                DOM.btnUndo.disabled = true;
+            } else {
+                DOM.matchStatus.textContent = '🎾 В игре';
+                DOM.btnPointLeft.disabled = !isJudge;
+                DOM.btnPointRight.disabled = !isJudge;
+                DOM.btnUndo.disabled = !isJudge || !(m.history && m.history.length > 0);
+                DOM.btnInterruptMatch.textContent = isJudge ? 'Прервать' : 'В игре';
+                DOM.btnInterruptMatch.disabled = !isJudge;
+                DOM.btnEndMatch.style.display = isJudge ? 'inline-flex' : 'none';
+            }
+            updateJudgeTransferButton(m);
+        }
+
+        function renderMatchStats(m) {
+            const totalPts = m.stats?.totalPoints || 0;
+            let leftPts = 0,
+                rightPts = 0;
+            let currentStreak = 0;
+            let streakSide = null;
+            if (m.history) {
+                for (let i = m.history.length - 1; i >= 0; i--) {
+                    const h = m.history[i];
+                    if (h.action === 'point') {
+                        if (streakSide === null) { streakSide = h.side;
+                            currentStreak = 1; } else if (h.side === streakSide) { currentStreak++; } else break;
+                    }
+                }
+                m.history.forEach(h => { if (h.action === 'point') { if (h.side === 'left') leftPts++;
+                        else rightPts++; } });
+            }
+            DOM.statTotalPoints.textContent = totalPts;
+            DOM.statLeftPts.textContent = leftPts;
+            DOM.statRightPts.textContent = rightPts;
+            DOM.statLeftName.textContent = m.players.left.name;
+            DOM.statRightName.textContent = m.players.right.name;
+            if (currentStreak >= 2) {
+                const name = streakSide === 'left' ? m.players.left.name : m.players.right.name;
+                DOM.statStreak.innerHTML = `<span style="color:var(--accent)">${name}: ${currentStreak}</span>`;
+            } else {
+                DOM.statStreak.textContent = '--';
+            }
+        }
+
+        function renderHistory(m) {
+            const histDiv = DOM.historyEntries;
+            if (!m.history || !m.history.length) {
+                histDiv.innerHTML =
+                    '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-desc">Ожидание событий...</div></div>';
+                DOM.btnRewind.disabled = true;
+                return;
+            }
+            const lastEvents = m.history.slice(-25);
+            const icons = { point: '🎾', game: '🏆', set: '📋', match: '👑' };
+            const classes = { point: 'point', game: 'game', set: 'set', match: 'match-win' };
+            const labels = { point: 'очко', game: 'гейм', set: 'сет', match: 'МАТЧ!' };
+            const wasAtBottom = histDiv.scrollHeight - histDiv.scrollTop - histDiv.clientHeight < 60;
+            histDiv.innerHTML = lastEvents.map(h => {
+                const icon = icons[h.action] || '•';
+                const cls = classes[h.action] || '';
+                const name = h.playerName || (h.side === 'left' ? m.players.left.name : m.players.right.name);
+                const time = h.ts ? new Date(h.ts).toLocaleTimeString([], { hour: '2-digit',
+                    minute: '2-digit', second: '2-digit' }) : '';
+                const globalIdx = m.history.indexOf(h);
+                return `<div class="history-entry ${cls}" data-idx="${globalIdx}" onclick="window._rewindToEvent(${globalIdx})"><span>${icon}</span><span><strong>${name}</strong> -- ${labels[h.action]||h.action}</span><span class="event-time">${time}</span></div>`;
+            }).join('');
+            if (wasAtBottom) histDiv.scrollTop = histDiv.scrollHeight;
+            DOM.btnRewind.disabled = false;
+        }
+
+        function rewindToEvent(idx) {
+            const entry = document.querySelector(`.history-entry[data-idx="${idx}"]`);
+            if (entry) {
+                entry.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                entry.style.background = 'rgba(255,107,20,0.2)';
+                setTimeout(() => entry.style.background = '', 1500);
+            }
+            showToast('📋 Прокручено к событию');
+        }
+        window._rewindToEvent = rewindToEvent;
+
+        function updateJudgeTransferButton(m) {
+            const btn = DOM.btnTransferJudge;
+            const isJudge = m.judgeId === currentUserId;
+            const isNoJudge = !m.judgeId;
+            const isFinished = m.status.phase === 'finished';
+            if (isJudge && !isFinished) {
+                btn.style.display = 'inline-flex';
+                btn.textContent = 'Передать';
+                btn.style.background = '#555';
+                btn.style.color = '#fff';
+            } else if (isNoJudge && !isFinished) {
+                btn.style.display = 'inline-flex';
+                btn.textContent = 'Стать судьёй';
+                btn.style.background = 'var(--gold)';
+                btn.style.color = '#000';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        // ═══════════════════════════════════════
+        // LIVE MATCH ACTIONS (guard based on judgeId)
+        // ═══════════════════════════════════════
+        async function addPoint(side) {
+            if (pointLock || !currentMatchId) return;
+            pointLock = true;
+            const matchRef = ref(db, `matches/${currentMatchId}`);
+            try {
+                // убедимся, что текущее имя пользователя загружено для автоназначения
+                if (!currentUserName) {
+                    const me = await FB.getUserSafe(currentUserId);
+                    currentUserName = me?.name || 'Игрок';
+                }
+                const tResult = await retryFB(() => runTransaction(matchRef, cur => {
+                    if (!cur) return;
+                    // автоназначение судьи, если его нет
+                    if (!cur.judgeId) {
+                        cur.judgeId = currentUserId;
+                        cur.judgeName = currentUserName;
+                    }
+                    // если судья не текущий пользователь -- отменяем транзакцию (возвращаем undefined)
+                    if (cur.judgeId !== currentUserId) return;
+                    if (cur.status.winner || cur.status.phase === 'interrupted') return;
+                    return GameEngine.processPoint(cur, side);
+                }));
+                if (!tResult.committed) {
+                    // транзакция не применена; определяем причину по текущему состоянию
+                    const snap = await retryFB(() => get(matchRef));
+                    const m = snap.val();
+                    if (m && m.judgeId !== currentUserId) {
+                        showToast('Только судья может изменять счёт');
+                    } else if (m && m.status.winner) {
+                        showToast('Матч завершён');
+                    } else if (m && m.status.phase === 'interrupted') {
+                        showToast('Матч прерван');
+                    }
+                } else {
+                    const snap = await retryFB(() => get(matchRef));
+                    const m = snap.val();
+                    if (m) {
+                        await FB.syncMatchList(currentMatchId, m);
+                        requestAnimationFrame(() => {
+                            renderLiveUI(m);
+                            renderHistory(m);
+                            renderMatchStats(m);
+                        });
+                        // если мы стали судьёй в результате автоназначения, синхронизируем UI-роль
+                        if (m.judgeId === currentUserId && currentRole !== 'judge') {
+                            currentRole = 'judge';
+                            updateRoleBadge();
+                        }
+                    }
+                }
+            } catch (e) { showToast('Ошибка при добавлении очка'); } finally {
+                setTimeout(() => { pointLock = false; }, POINT_LOCK_MS);
+            }
+        }
+
+        async function undoLastPoint() {
+            if (!currentMatchId) return;
+            const matchRef = ref(db, `matches/${currentMatchId}`);
+            const snap = await retryFB(() => get(matchRef));
+            const m = snap.val();
+            if (!m || m.judgeId !== currentUserId) { showToast('Только судья может отменять действия'); return; }
+            await retryFB(() => runTransaction(matchRef, cur => {
+                if (!cur || cur.judgeId !== currentUserId) return;
+                return GameEngine.undoLastAction(cur);
+            }));
+            const updated = (await retryFB(() => get(matchRef))).val();
+            if (updated) {
+                requestAnimationFrame(() => {
+                    renderLiveUI(updated);
+                    renderHistory(updated);
+                    renderMatchStats(updated);
+                });
+                await FB.syncMatchList(currentMatchId, updated);
+            }
+        }
+
+        async function endMatch() {
+            if (!currentMatchId) return;
+            const matchRef = ref(db, `matches/${currentMatchId}`);
+            const snap = await retryFB(() => get(matchRef));
+            const m = snap.val();
+            if (!m || m.judgeId !== currentUserId) { showToast('Только судья может завершить матч'); return; }
+            if (!confirm('Завершить матч?')) return;
+            const winner = m.status.winner || 'left';
+            await retryFB(() => update(matchRef, { 'status/phase': 'finished', 'status/winner': winner,
+                finishedAt: serverTimestamp() }));
+            const updated = (await retryFB(() => get(matchRef))).val();
+            await FB.syncMatchList(currentMatchId, updated);
+            const ratingRes = await FB.applyRating(currentMatchId, winner);
+            if (ratingRes) showToast(
+                `Рейтинг: ${ratingRes.leftName} ${ratingRes.left>0?'+':''}${ratingRes.left}, ${ratingRes.rightName} ${ratingRes.right>0?'+':''}${ratingRes.right}`
+                );
+            if (m.players.left.userId) await FB.sendNotification(m.players.left.userId, { type: 'match_end',
+                message: `Матч против ${m.players.right.name} завершён. ${winner==='left'?'Победа!':'Поражение.'}` });
+            if (m.players.right.userId && m.players.right.userId !== m.players.left.userId) await FB.sendNotification(m
+                .players.right.userId, { type: 'match_end',
+                    message: `Матч против ${m.players.left.name} завершён. ${winner==='right'?'Победа!':'Поражение.'}` });
+            requestAnimationFrame(() => {
+                renderLiveUI(updated);
+                renderHistory(updated);
+                renderMatchStats(updated);
+            });
+            vibrate([50, 30, 100]);
+        }
+
+        async function interruptMatch() {
+            if (!currentMatchId) return;
+            const matchRef = ref(db, `matches/${currentMatchId}`);
+            const snap = await retryFB(() => get(matchRef));
+            const m = snap.val();
+            if (!m || m.judgeId !== currentUserId) { showToast('Только судья может управлять матчем'); return; }
+            if (m.status.phase === 'interrupted') {
+                await retryFB(() => update(matchRef, { 'status/phase': 'playing' }));
+            } else {
+                if (!confirm('Прервать матч?')) return;
+                await retryFB(() => update(matchRef, { 'status/phase': 'interrupted' }));
+            }
+        }
+
+        async function transferJudge() {
+            if (!currentMatchId) return;
+            const matchRef = ref(db, `matches/${currentMatchId}`);
+            const snap = await retryFB(() => get(matchRef));
+            const m = snap.val();
+            if (!m) return;
+            // Если судьи нет, любой может стать судьёй (кроме завершённых матчей)
+            if (!m.judgeId && m.status.phase !== 'finished') {
+                if (!confirm('Стать судьёй этого матча?')) return;
+                const meSnap = await retryFB(() => get(ref(db, `users/${currentUserId}`)));
+                const myName = meSnap.val()?.name || 'Судья';
+                await retryFB(() => update(matchRef, { judgeId: currentUserId, judgeName: myName }));
+                currentRole = 'judge';
+                updateRoleBadge();
+                showToast('🧑‍⚖️ Теперь вы судья!');
+                if (m.players.left.userId) await FB.sendNotification(m.players.left.userId, { type: 'judge_transfer',
+                    message: `${myName} стал новым судьёй матча` });
+                if (m.players.right.userId && m.players.right.userId !== m.players.left.userId) await FB
+                    .sendNotification(m.players.right.userId, { type: 'judge_transfer',
+                        message: `${myName} стал новым судьёй матча` });
+                return;
+            }
+            // Если текущий пользователь судья, может передать
+            if (m.judgeId === currentUserId && m.status.phase !== 'finished') {
+                const newJudgeId = prompt('Введите ID нового судьи (или имя):');
+                if (!newJudgeId) return;
+                const uSnap = await retryFB(() => get(ref(db, 'users')));
+                const users = uSnap.val() || {};
+                let foundId = null,
+                    foundName = newJudgeId;
+                for (const [id, u] of Object.entries(users)) {
+                    if (id === newJudgeId || u.name?.toLowerCase() === newJudgeId.toLowerCase()) { foundId = id;
+                        foundName = u.name; break; }
+                }
+                if (!foundId) return showToast('Пользователь не найден');
+                await retryFB(() => update(matchRef, { judgeId: foundId, judgeName: foundName }));
+                await FB.sendNotification(foundId, { type: 'judge_transfer',
+                    message: `Вам передано судейство в матче ${m.players.left.name} vs ${m.players.right.name}` });
+                showToast(`🧑‍⚖️ Судейство передано ${foundName}`);
+                if (currentUserId === foundId) currentRole = 'judge';
+                updateRoleBadge();
+                return;
+            }
+            showToast('Нет прав для передачи судейства');
+        }
+
+        // ═══════════════════════════════════════
+        // CHAT
+        // ═══════════════════════════════════════
+        const sendChatMessage = debounce(async function _sendChatMessage() {
+            const now = Date.now();
+            if (now - lastChatSend < CHAT_COOLDOWN_MS) { showToast('Слишком быстро! Подождите...'); return; }
+            const text = DOM.chatInput.value.trim();
+            if (!text || !currentMatchId) return;
+            if (text.length > 120) { showToast('Максимум 120 символов'); return; }
+            DOM.chatInput.value = '';
+            updateCharCount();
+            lastChatSend = now;
+            const meSnap = await retryFB(() => get(ref(db, `users/${currentUserId}`)));
+            const me = meSnap.val();
+            const senderName = me ? me.name : 'Аноним';
+            const msgRef = push(ref(db, `matches/${currentMatchId}/chat`));
+            await retryFB(() => set(msgRef, { id: msgRef.key, text, senderName, senderId: currentUserId,
+                senderRole: currentRole, ts: Date.now(), reactions: {} }));
+        }, CHAT_DEBOUNCE_MS);
+
+        async function addReaction(msgId, reaction) {
+            if (!currentMatchId || !msgId) return;
+            const reactionRef = ref(db, `matches/${currentMatchId}/chat/${msgId}/reactions/${reaction}`);
+            await retryFB(() => runTransaction(reactionRef, cur => (cur || 0) + 1));
+            vibrate(10);
+        }
+        window._addReaction = addReaction;
+
+        function updateCharCount() {
+            const len = (DOM.chatInput.value || '').length;
+            DOM.chatCharCount.textContent = `${len}/120`;
+            DOM.chatCharCount.classList.toggle('warn', len > 100);
+        }
+
+        // ═══════════════════════════════════════
+        // BROADCAST
+        // ═══════════════════════════════════════
+        function subscribeMatchForBroadcast(matchId) {
+            SubManager.clearByPrefix('match_');
+            const unsub = onValue(ref(db, `matches/${matchId}`), snap => {
+                const m = snap.val();
+                if (!m) {
+                    DOM.broadcastContent.innerHTML =
+                        '<div class="empty-state"><div class="empty-icon">🏁</div><div class="empty-title">Матч завершён</div></div>';
+                    return;
+                }
+                const cur = m.score.currentSet;
+                const pts = GameEngine.fmtPoints(cur.points, cur.isTiebreak);
+                const serve = cur.serveSide === 'left' ? `Подаёт: ${m.players.left.name}` :
+                    `Подаёт: ${m.players.right.name}`;
+                const status = m.status.winner ?
+                    `🏆 ${m.status.winner==='left'?m.players.left.name:m.players.right.name}` : (m.status.phase ===
+                        'interrupted' ? '⏸ Прерван' : '🎾 В игре');
+                const judgeTxt = m.judgeName ?
+                    `<p style="font-size:0.7rem;color:var(--gold)">🧑‍⚖️ Судья: ${m.judgeName}</p>` : '';
+                DOM.broadcastContent.innerHTML = `
+              <h3 style="color:var(--accent)">${m.tournamentName||''}</h3>${judgeTxt}
+              <div style="display:flex;justify-content:space-around;margin:12px 0">
+                <div><strong>${m.players.left.name}</strong><br><span style="font-size:1.8rem;color:var(--accent)">${m.score.sets[0]}</span><br>${cur.games[0]}<br><span style="font-size:2rem">${pts[0]}</span></div>
+                <div style="align-self:center;opacity:0.4">VS</div>
+                <div><strong>${m.players.right.name}</strong><br><span style="font-size:1.8rem;color:var(--accent)">${m.score.sets[1]}</span><br>${cur.games[1]}<br><span style="font-size:2rem">${pts[1]}</span></div>
+              </div>
+              <p style="font-size:0.75rem;color:var(--text2)">${serve}</p><p style="font-weight:700">${status}</p>
+              <button class="btn block" id="btnWatchLive" style="margin-top:8px">👀 Смотреть</button>`;
+                const watchBtn = document.getElementById('btnWatchLive');
+                if (watchBtn) watchBtn.onclick = () => {
+                    currentMatchId = matchId;
+                    currentRole = 'spectator';
+                    updateRoleBadge();
+                    subscribeMatchForLive(matchId);
+                    subscribeChat(matchId);
+                    showScreen('live-match');
+                };
+            }, err => { console.warn('Broadcast sub error', err); });
+            SubManager.add('match_broadcast', unsub);
+        }
+
+        // ═══════════════════════════════════════
+        // CREATE MATCHES
+        // ═══════════════════════════════════════
+        async function loadSelects() {
+            const [uSnap, tSnap] = await Promise.all([
+                retryFB(() => get(ref(db, 'users'))),
+                retryFB(() => get(ref(db, 'tournaments')))
+            ]);
+            const users = uSnap.val() || {};
+            const tournaments = tSnap.val() || {};
+            const userOptions = Object.entries(users).map(([id, u]) =>
+                `<option value="${id}">${u.name} (${u.rating||1000})</option>`).join('');
+            const tournOptions = Object.entries(tournaments).map(([id, t]) =>
+                `<option value="${id}">${t.name}</option>`).join('');
+            [DOM.liveLeftSelect, DOM.liveRightSelect, DOM.selLeftPlayer, DOM.selRightPlayer].forEach(sel => {
+                if (sel) sel.innerHTML = '<option value="">Выберите...</option>' + userOptions;
+            });
+            if (DOM.inpTournamentSelect) DOM.inpTournamentSelect.innerHTML =
+                '<option value="">Обычный матч</option>' + tournOptions;
+        }
+
+        async function createLiveMatch() {
+            const tId = DOM.inpTournamentSelect.value;
+            if (!tId) return showToast('⚠️ Сначала создайте турнир');
+            const tName = DOM.inpTournamentSelect.options[DOM.inpTournamentSelect.selectedIndex].text;
+            const round = DOM.inpRound.value || null;
+            let lUid = DOM.liveLeftSelect.value || null;
+            let left = lUid ? DOM.liveLeftSelect.options[DOM.liveLeftSelect.selectedIndex].text.split('(')[0].trim() : (DOM
+                .inpNewLiveLeft.value.trim() || 'Игрок 1');
+            if (!lUid && DOM.inpNewLiveLeft.value.trim()) {
+                const uRef = push(ref(db, 'users'));
+                await retryFB(() => set(uRef, { name: left, rating: 1000, matchesPlayed: 0, wins: 0, losses: 0, streak: 0,
+                    bestStreak: 0, avgOppRating: 1000, badges: [], inviteCode: FB.generateInviteCode(),
+                    friends: {}, createdAt: Date.now() }));
+                lUid = uRef.key;
+            }
+            let rUid = DOM.liveRightSelect.value || null;
+            let right = rUid ? DOM.liveRightSelect.options[DOM.liveRightSelect.selectedIndex].text.split('(')[0].trim() : (
+                DOM.inpNewLiveRight.value.trim() || 'Игрок 2');
+            if (!rUid && DOM.inpNewLiveRight.value.trim()) {
+                const uRef = push(ref(db, 'users'));
+                await retryFB(() => set(uRef, { name: right, rating: 1000, matchesPlayed: 0, wins: 0, losses: 0, streak: 0,
+                    bestStreak: 0, avgOppRating: 1000, badges: [], inviteCode: FB.generateInviteCode(),
+                    friends: {}, createdAt: Date.now() }));
+                rUid = uRef.key;
+            }
+            const [lSnap, rSnap, meSnap] = await Promise.all([
+                lUid ? retryFB(() => get(ref(db, `users/${lUid}`))) : Promise.resolve({ val: () => null }),
+                rUid ? retryFB(() => get(ref(db, `users/${rUid}`))) : Promise.resolve({ val: () => null }),
+                retryFB(() => get(ref(db, `users/${currentUserId}`)))
+            ]);
+            const lRating = lSnap.val()?.rating || 1000;
+            const rRating = rSnap.val()?.rating || 1000;
+            const judgeName = meSnap.val()?.name || 'Судья';
+            if (!currentUserName) currentUserName = judgeName; // обновим кэш
+            const mRef = push(ref(db, 'matches'));
+            const id = mRef.key;
+            const cfg = GameEngine.getConfig('single');
+            const match = {
+                id,
+                type: 'live',
+                tournamentId: tId,
+                tournamentName: tName,
+                round,
+                mode: 'single',
+                judgeId: currentUserId,
+                judgeName,
+                players: { left: { name: left, userId: lUid, rating: lRating }, right: { name: right, userId: rUid,
+                        rating: rRating } },
+                score: { sets: [0, 0], currentSet: { games: [0, 0], points: [0, 0], serveSide: 'left', isTiebreak: false,
+                        deuceCount: 0 } },
+                status: { phase: 'playing', winner: null },
+                stats: { totalPoints: 0, totalGames: 0 },
+                history: [],
+                config: { ...cfg },
+                ratingApplied: false,
+                createdAt: serverTimestamp()
+            };
+            await retryFB(() => set(mRef, match));
+            await retryFB(() => push(ref(db, `tournaments/${tId}/matches`), id));
+            await FB.syncMatchList(id, match);
+            if (lUid && lUid !== currentUserId) await FB.sendNotification(lUid, { type: 'match_start',
+                message: `Матч против ${right} начался! Судья: ${judgeName}` });
+            if (rUid && rUid !== currentUserId) await FB.sendNotification(rUid, { type: 'match_start',
+                message: `Матч против ${left} начался! Судья: ${judgeName}` });
+            currentMatchId = id;
+            currentRole = 'judge';
+            updateRoleBadge();
+            subscribeMatchForLive(id);
+            subscribeChat(id);
+            showScreen('live-match');
+        }
+
+        async function createSelfMatch() {
+            let lUid = DOM.selLeftPlayer.value || null;
+            let left = lUid ? DOM.selLeftPlayer.options[DOM.selLeftPlayer.selectedIndex].text.split('(')[0].trim() : (DOM
+                .inpNewLeftPlayer.value.trim() || 'Игрок 1');
+            if (!lUid && DOM.inpNewLeftPlayer.value.trim()) {
+                const uRef = push(ref(db, 'users'));
+                await retryFB(() => set(uRef, { name: left, rating: 1000, matchesPlayed: 0, wins: 0, losses: 0, streak: 0,
+                    bestStreak: 0, avgOppRating: 1000, badges: [], inviteCode: FB.generateInviteCode(),
+                    friends: {}, createdAt: Date.now() }));
+                lUid = uRef.key;
+            }
+            let rUid = DOM.selRightPlayer.value || null;
+            let right = rUid ? DOM.selRightPlayer.options[DOM.selRightPlayer.selectedIndex].text.split('(')[0].trim() : (DOM
+                .inpNewRightPlayer.value.trim() || 'Игрок 2');
+            if (!rUid && DOM.inpNewRightPlayer.value.trim()) {
+                const uRef = push(ref(db, 'users'));
+                await retryFB(() => set(uRef, { name: right, rating: 1000, matchesPlayed: 0, wins: 0, losses: 0, streak: 0,
+                    bestStreak: 0, avgOppRating: 1000, badges: [], inviteCode: FB.generateInviteCode(),
+                    friends: {}, createdAt: Date.now() }));
+                rUid = uRef.key;
+            }
+            const scoreRaw = DOM.inpScoreSelf.value.trim();
+            if (!scoreRaw) return showToast('Введите счёт');
+            const setsArr = scoreRaw.split(/\s+/);
+            const validation = GameEngine.validateSets(setsArr);
+            if (!validation.valid) return showToast(validation.msg);
+            const [lSnap, rSnap] = await Promise.all([
+                lUid ? retryFB(() => get(ref(db, `users/${lUid}`))) : Promise.resolve({ val: () => null }),
+                rUid ? retryFB(() => get(ref(db, `users/${rUid}`))) : Promise.resolve({ val: () => null })
+            ]);
+            const mRef = push(ref(db, 'matches'));
+            const id = mRef.key;
+            const match = {
+                id,
+                type: 'self',
+                players: { left: { name: left, userId: lUid, rating: lSnap.val()?.rating || 1000 }, right: { name: right,
+                        userId: rUid, rating: rSnap.val()?.rating || 1000 } },
+                score: { sets: setsArr },
+                status: { phase: 'pending', winner: validation.winner },
+                creatorId: currentUserId,
+                confirmLeft: lUid === currentUserId,
+                confirmRight: rUid === currentUserId,
+                createdAt: serverTimestamp()
+            };
+            await retryFB(() => set(mRef, match));
+            await FB.syncMatchList(id, match);
+            if (lUid === currentUserId || rUid === currentUserId) {
+                await confirmSelfMatch(id, match);
+            } else {
+                showToast('✅ Матч записан. Ожидает подтверждения.');
+                loadDashboard();
+                showScreen('dashboard');
+            }
+        }
+
+        async function confirmSelfMatch(id, m) {
+            const winner = m.status.winner;
+            const lUid = m.players.left.userId;
+            const rUid = m.players.right.userId;
+            if ((lUid === currentUserId && !m.confirmLeft) || (rUid === currentUserId && !m.confirmRight)) {
+                await retryFB(() => update(ref(db, `matches/${id}`), {
+                    [lUid === currentUserId ? 'confirmLeft' : 'confirmRight']: true
+                }));
+            }
+            const snap = await retryFB(() => get(ref(db, `matches/${id}`)));
+            const updated = snap.val();
+            if (updated && updated.confirmLeft && updated.confirmRight && updated.status.phase === 'pending') {
+                await retryFB(() => update(ref(db, `matches/${id}`), { 'status/phase': 'confirmed',
+                    finishedAt: serverTimestamp() }));
+                await FB.syncMatchList(id, { ...updated, status: { ...updated.status, phase: 'confirmed' } });
+                await FB.applyRating(id, winner);
+                showToast('✅ Матч подтверждён!');
+                loadDashboard();
+                showScreen('dashboard');
+            } else {
+                showToast('Ожидание второго игрока');
+            }
+        }
+
+        function showSelfMatchModal(id, m) {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.innerHTML = `<div class="modal">
+            <h4>📝 Подтверждение матча</h4>
+            <p style="text-align:center">${m.players.left.name} vs ${m.players.right.name}</p>
+            <p style="text-align:center;font-weight:900;color:var(--accent)">${m.score.sets.join(' ')}</p>
+            <p style="text-align:center">Победитель: <strong>${m.status.winner==='left'?m.players.left.name:m.players.right.name}</strong></p>
+            <button class="btn primary block" id="btnConfirmSelf">✅ Подтвердить</button>
+            <button class="btn block" id="btnRejectSelf">✕ Отклонить</button></div>`;
+            document.body.appendChild(overlay);
+            overlay.querySelector('#btnConfirmSelf').onclick = async () => { overlay.remove();
+                await confirmSelfMatch(id, m); };
+            overlay.querySelector('#btnRejectSelf').onclick = () => { overlay.remove();
+                showToast('Отклонено'); };
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+        }
+
+        // ═══════════════════════════════════════
+        // EVENT BINDINGS
+        // ═══════════════════════════════════════
+        function bindAllEvents() {
+            document.getElementById('screen-start').addEventListener('click', function startApp() {
+                if (this.dataset.started === 'true') return;
+                this.dataset.started = 'true';
+                this.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
+                this.style.transform = 'translateY(-100%)';
+                this.style.opacity = '0';
+                vibrate(10);
+                setTimeout(() => { this.classList.remove('active');
+                    this.style.display = 'none';
+                    initUser(); }, 500);
+            });
+
+            $$('.bottomnav button').forEach(b => {
+                b.addEventListener('click', () => {
+                    vibrate(8);
+                    const screen = b.dataset.screen;
+                    showScreen(screen);
+                    if (screen === 'dashboard') loadDashboard();
+                    if (screen === 'leaderboard') loadLeaderboard();
+                    if (screen === 'friends') loadFriends();
+                    if (screen === 'notifications') loadNotifications();
+                });
+            });
+
+            $$('.lb-filter').forEach(b => b.addEventListener('click', function() { loadLeaderboard(this.dataset
+                    .period); }));
+
+            document.getElementById('btnQuickMatch').addEventListener('click', async () => {
+                vibrate(8);
+                await loadSelects();
+                showScreen('quick-setup');
+            });
+            document.getElementById('btnQuickSelf').addEventListener('click', async () => {
+                vibrate(8);
+                await loadSelects();
+                showScreen('self-setup');
+            });
+            document.getElementById('btnFindRival').addEventListener('click', () => {
+                vibrate(8);
+                loadMatchmaking();
+                showScreen('matchmaking');
+            });
+            document.getElementById('btnBackMatchmaking').addEventListener('click', () => showScreen('dashboard'));
+            document.getElementById('btnBackQuickSetup').addEventListener('click', () => showScreen('dashboard'));
+            document.getElementById('btnBackSelfSetup').addEventListener('click', () => showScreen('dashboard'));
+            document.getElementById('btnCreateLiveMatch').addEventListener('click', createLiveMatch);
+            document.getElementById('btnCreateSelfMatch').addEventListener('click', createSelfMatch);
+            document.getElementById('btnNewTournamentInline').addEventListener('click', async () => {
+                const name = prompt('Название турнира:');
+                if (name) { await retryFB(() => push(ref(db, 'tournaments'), { name, type: 'single_elim',
+                        rounds: [], createdAt: serverTimestamp() }));
+                    await loadSelects(); }
+            });
+            document.getElementById('btnBackFromLiveMatch').addEventListener('click', () => {
+                SubManager.clearByPrefix('match_');
+                currentMatchId = null;
+                currentRole = 'player';
+                updateRoleBadge();
+                _lastRenderedPointsL = '';
+                _lastRenderedPointsR = '';
+                _prevGameWinner = null;
+                _prevSetWinner = null;
+                showScreen('dashboard');
+                loadDashboard();
+            });
+            document.getElementById('btnBackBroadcast').addEventListener('click', () => {
+                SubManager.clearByPrefix('match_');
+                currentMatchId = null;
+                currentRole = 'player';
+                updateRoleBadge();
+                showScreen('dashboard');
+                loadDashboard();
+            });
+            document.getElementById('btnPointLeft').addEventListener('click', () => addPoint('left'));
+            document.getElementById('btnPointRight').addEventListener('click', () => addPoint('right'));
+            document.getElementById('btnUndo').addEventListener('click', undoLastPoint);
+            document.getElementById('btnEndMatch').addEventListener('click', endMatch);
+            document.getElementById('btnInterruptMatch').addEventListener('click', interruptMatch);
+            document.getElementById('btnTransferJudge').addEventListener('click', transferJudge);
+            document.getElementById('btnAddFriendByCode').addEventListener('click', addFriendByCode);
+            document.getElementById('btnRewind').addEventListener('click', () => {
+                if (currentMatchData?.history) rewindToEvent(currentMatchData.history.length - 1);
+            });
+            document.getElementById('chatInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault();
+                    sendChatMessage(); }
+                updateCharCount();
+            });
+            document.getElementById('chatInput').addEventListener('input', updateCharCount);
+            document.getElementById('btnSendChat').addEventListener('click', sendChatMessage);
+            document.getElementById('btnChangeName').addEventListener('click', changeName);
+            document.getElementById('btnBackProfile').addEventListener('click', () => {
+                const activeNav = document.querySelector('.bottomnav button.active');
+                const screen = activeNav ? activeNav.dataset.screen : 'dashboard';
+                showScreen(screen);
+                if (screen === 'leaderboard') loadLeaderboard();
+                if (screen === 'friends') loadFriends();
+                if (screen === 'dashboard') loadDashboard();
+            });
+            document.getElementById('btnOpenProfile').addEventListener('click', () => openPlayerStats(currentUserId));
+            document.getElementById('btnBackBracket').addEventListener('click', () => showScreen('dashboard'));
+
+            $$('#reactionBar .btn.reaction').forEach(b => {
+                b.addEventListener('click', function() {
+                    const reaction = this.dataset.reaction;
+                    const lastMsg = document.querySelector('#chatMessages .chat-message:last-child');
+                    const msgId = lastMsg?.dataset.msgId;
+                    if (msgId) addReaction(msgId, reaction);
+                    else showToast('Нет сообщений для реакции');
+                });
+            });
+
+            $$('.mm-filter').forEach(b => {
+                b.addEventListener('click', function() {
+                    $$('.mm-filter').forEach(x => x.classList.remove('active'));
+                    this.classList.add('active');
+                    currentMatchmakingFilter = this.dataset.filter;
+                    loadMatchmaking();
+                });
+            });
+
+            ['online', 'offline'].forEach(evt => {
+                window.addEventListener(evt, () => {
+                    updateOfflineBanner();
+                    if (isOnline()) {
+                        showToast('🔗 Подключение восстановлено');
+                        if (currentMatchId && currentRole === 'judge') subscribeMatchForLive(
+                            currentMatchId);
+                        loadDashboard();
+                    }
+                });
+            });
+
+            document.getElementById('myInviteCode').addEventListener('click', copyInviteCode);
+        }
+
+        // ═══════════════════════════════════════
+        // PWA MANIFEST
+        // ═══════════════════════════════════════
+        function setupPWA() {
+            const manifest = {
+                name: 'Tennis Live · Pro',
+                short_name: 'TennisLive',
+                description: 'Realtime tennis scoring system',
+                start_url: '.',
+                display: 'standalone',
+                background_color: '#08090a',
+                theme_color: '#08090a',
+                orientation: 'portrait',
+                icons: [{
+                    src: 'data:image/svg+xml,' + encodeURIComponent(
+                        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="32" fill="#ff6b14"/><text x="96" y="128" text-anchor="middle" font-size="64" font-weight="900" fill="#000" font-family="sans-serif">TL</text></svg>'
+                        ),
+                    sizes: '192x192',
+                    type: 'image/svg+xml',
+                    purpose: 'any maskable'
+                }]
+            };
+            const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            const manifestUrl = URL.createObjectURL(blob);
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestUrl;
+            document.head.appendChild(link);
+            if ('serviceWorker' in navigator) {
+                const swCode = `self.addEventListener('install',e=>{self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(clients.claim())});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))})`;
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+                navigator.serviceWorker.register(swUrl).catch(() => {});
+            }
+        }
+
+        // ═══════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════
+        function init() {
+            setupPWA();
+            bindAllEvents();
+            updateOfflineBanner();
+            showScreen('start');
+            document.getElementById('screen-start').style.display = 'flex';
+            onAuthStateChanged(auth, (user) => {
+                if (user && !currentUserId) {
+                    const stored = localStorage.getItem(LS_UID_KEY);
+                    if (stored) {
+                        currentUserId = stored;
+                        onUserReady();
+                    } else {
+                        initUser();
+                    }
+                }
+            });
+            signInAnonymously(auth).catch(e => {
+                console.warn('Auth fallback', e);
+                if (!currentUserId) {
+                    const stored = localStorage.getItem(LS_UID_KEY);
+                    if (stored) { currentUserId = stored;
+                        onUserReady(); } else { initUser(); }
+                }
+            });
+        }
+        init();
+    </script>
+</body>
+</html>
